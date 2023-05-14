@@ -14,6 +14,6 @@ public class TodoDTO {
     private boolean done;
 
     public TodoDTO(final TodoEntity todoEntity) {
-        
+
     }
 }
