@@ -1,10 +1,7 @@
 package com.example.study_project.controller;
 
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/test")
@@ -19,5 +16,9 @@ public class TestController {
         return "Hello World! Id " + id;
     }
 
-    
+    // ...:8080/test/testRequestParam?id=123 이런식
+    @GetMapping("/testRequestParam")
+    public String testRequestParam(@RequestParam(required = false) int id) {
+        return "Hello World! Id " + id;
+    }
 }
