@@ -43,7 +43,11 @@ public class TodoService {
         todoRepository.save(entity);
 
         log.info("Entity Id : {} is saved.", entity.getId());
-
         return todoRepository.findByUserId(entity.getUserId());
+
+    }
+
+    public List<TodoEntity> retrieve(final String userId){
+        return todoRepository.findByUserId(userId);
     }
 }
