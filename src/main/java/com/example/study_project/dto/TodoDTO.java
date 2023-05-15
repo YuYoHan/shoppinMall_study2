@@ -14,6 +14,16 @@ public class TodoDTO {
     private boolean done;
 
     public TodoDTO(final TodoEntity todoEntity) {
+        this.id = todoEntity.getId();
+        this.title = todoEntity.getTitle();
+        this.done = todoEntity.isDone();
+    }
 
+    public static TodoEntity todoEntity(final TodoDTO todoDTO){
+        return TodoEntity.builder()
+                .id(todoDTO.getId())
+                .title(todoDTO.getTitle())
+                .done(todoDTO.isDone())
+                .build();
     }
 }

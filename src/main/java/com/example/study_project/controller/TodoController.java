@@ -1,15 +1,16 @@
 package com.example.study_project.controller;
 
 import com.example.study_project.dto.ResponseDTO;
+import com.example.study_project.dto.TodoDTO;
+import com.example.study_project.entity.TodoEntity;
 import com.example.study_project.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/todo")
@@ -29,5 +30,40 @@ public class TodoController {
                 .build();
 
         return ResponseEntity.ok().body(responseDTO);
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createTodo(@RequestBody TodoDTO dto) {
+        try {
+            String temporaryUserId = "temporary-user";
+
+            // (1) TodoEntity로 변환
+            TodoEntity entity = TodoDTO.todoEntity(dto);
+
+            // (2) id를 null로 초기화한다.
+            // 생성 당시에는 id가 없어야 하기 때문이다.
+            entity.setId(null);
+
+            // (3) 임시 유저 아이디를 설정해준다.
+            // 현재는 임시 아이디
+            entity.setUserId(temporaryUserId);
+
+            // (4) 서비스를 이용해 Todo엔티티를 생성한다.
+            List<TodoEntity> entities = todoService.create(entity);
+
+            // (5) 자바 스트림을 이용해 리턴된 엔티티 리스트를 TodoDTO 리스트로 변환한다.
+            List<TodoDTO> dtos = entities.stream().map(TodoDTO::new).collect(Collectors.toList());
+
+            // (6) 변환된 TodoDTO 리스트를 이용해 ResponseDTO를 초기화한다.
+            ResponseDTO<TodoDTO> responseDTO = ResponseDTO.<TodoDTO>builder().data(dtos).build();
+
+            // (7) ResponseDTO를 리턴한다.
+            return ResponseEntity.ok().body(responseDTO);
+        } catch (Exception e){
+            // (8) 혹시 예외가 나는 경우 dto 대신 error에 메시지를 넣어 리턴한다.
+            String error = e.getMessage();
+            ResponseDTO<TodoDTO> responseDTO = ResponseDTO.<TodoDTO>builder().error(error).build();
+            return ResponseEntity.badRequest().body(responseDTO);
+        }
     }
 }
