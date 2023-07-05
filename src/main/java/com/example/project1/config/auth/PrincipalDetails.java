@@ -1,6 +1,6 @@
 package com.example.project1.config.auth;
 
-import com.example.project1.entity.MemberEntity;
+import com.example.project1.entity.member.MemberEntity;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -38,39 +38,62 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
         collection.add(new GrantedAuthority() {
             @Override
             public String getAuthority() {
-                return member.getRole();
+                return member.getUserType().toString();
             }
         });
         return collection;
     }
 
+    // 사용자 패스워드를 반환
     @Override
     public String getPassword() {
-        return null;
+        return member.getUserPw();
     }
 
+    // 사용자 이름 반환
     @Override
     public String getUsername() {
-        return null;
+        return member.getUserEmail();
     }
 
+
+    // 계정 만료 여부 반환
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        // 만료되었는지 확인하는 로직
+        // true = 만료되지 않음
+        return true;
     }
 
+    // 계정 잠금 여부 반환
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        // true = 잠금되지 않음
+        return true;
     }
 
+    // 패스워드의 만료 여부 반환
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        // 패스워드가 만료되었는지 확인하는 로직
+        // true = 만료되지 않음
+        return true;
+    }
+
+    // 계정 사용 가능 여부 반환
+    @Override
+    public boolean isEnabled() {
+        // 계정이 사용 가능한지 확인하는 로직
+        // true = 사용 가능
+        return true;
+    }
+    @Override
+    public Map<String, Object> getAttributes() {
+        return attributes;
     }
 
     @Override
-    public boolean isEnabled() {
-        return false;
+    public String getName() {
+        return null;
     }
 }

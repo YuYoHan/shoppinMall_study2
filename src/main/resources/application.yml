@@ -1,6 +1,8 @@
 spring:
   profiles:
-    include: jwt, oauth
+    include:
+    - jwt
+    - oauth
   devtools:
     livereload:
       enabled: true
