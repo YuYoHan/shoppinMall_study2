@@ -17,20 +17,21 @@ import javax.persistence.Id;
 public class TokenEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String grantType;
     private String accessToken;
     private String refreshToken;
     private String userEmail;
     private String nickName;
+    private Long userId;
 
 
     @Builder
-    public TokenEntity(String grantType, String accessToken, String refreshToken, String userEmail, String nickName) {
+    public TokenEntity(String grantType, String accessToken, String refreshToken, String userEmail, String nickName, Long userId) {
         this.grantType = grantType;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.userEmail = userEmail;
         this.nickName = nickName;
+        this.userId = userId;
     }
 }

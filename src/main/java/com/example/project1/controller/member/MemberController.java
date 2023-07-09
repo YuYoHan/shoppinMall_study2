@@ -2,6 +2,7 @@ package com.example.project1.controller.member;
 
 import com.example.project1.domain.jwt.TokenDTO;
 import com.example.project1.domain.member.MemberDTO;
+import com.example.project1.service.jwt.RefreshTokenService;
 import com.example.project1.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,7 @@ import java.util.Optional;
 public class MemberController {
 
     private final MemberService memberService;
+    private final RefreshTokenService refreshTokenService;
 
     // 회원 가입
     @PostMapping("/")
@@ -69,6 +71,23 @@ public class MemberController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    // refresh로 access 토큰 재발급
+    // @RequsetHeader"Authorization")은 Authorization 헤더에서 값을 추출합니다.
+    // 일반적으로 리프레시 토큰은 Authorization 헤더의 값으로 전달되며,
+    // Bearer <token> 형식을 따르는 경우가 일반적입니다. 여기서 <token> 부분이 실제 리프레시 토큰입니다
+    // 로 추출하면 다음과 같이 문자열로 나온다.
+    // Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestHeader("Authorization") String token) throws Exception {
+        try {
+            ResponseEntity<TokenDTO> accessToken = refreshTokenService.createAccessToken(token);
+            return ResponseEntity.ok().body(accessToken);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     // 로그아웃
     @GetMapping("/logOut")

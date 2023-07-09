@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtProvider {
 
-    private  static  final  String AUTHORITIES_KEY = "auth";
+    private static final String AUTHORITIES_KEY = "Authorization";
 
     @Value("${jwt.access.expiration}")
     private long accessTokenTime;
@@ -31,7 +31,6 @@ public class JwtProvider {
     private long refreshTokenTime;
 
     private Key key;
-
 
 
     public JwtProvider( @Value("${jwt.secret_key}") String secret_key) {
@@ -48,14 +47,24 @@ public class JwtProvider {
                 .collect(Collectors.joining(","));
 
         long now = (new Date()).getTime();
+        Date now2 = new Date();
 
         // AccessToken 생성
         Date accessTokenExpire = new Date(now + this.accessTokenTime);
         String accessToken = Jwts.builder()
+                // 내용 iat : 현재 시간
+                // 토큰이 발급된 시간으로 iat은 issued at을 의미
+                .setIssuedAt(now2)
+                // 내용 sub : 유저의 이메일
+                // 토큰 제목
                 .setSubject(authentication.getName())
+                // 클레임 id : 유저 ID
                 .claim(AUTHORITIES_KEY, authorities)
+                // 내용 exp : 토큰 만료 시간, 시간은 NumericDate 형식(예: 1480849143370)으로 하며
+                // 항상 현재 시간 이후로 설정합니다.
                 .setExpiration(accessTokenExpire)
-                .signWith(key, SignatureAlgorithm.ES256)
+                // 서명 : 비밀값과 함께 해시값을 ES256 방식으로 암호화
+                .signWith(key, SignatureAlgorithm.RS256)
                 .compact();
 
         log.info("accessToken : " + accessToken);
@@ -63,10 +72,13 @@ public class JwtProvider {
         // RefreshToken 생성
         Date refreshTokenExpire = new Date(now + this.refreshTokenTime);
         String refreshToken = Jwts.builder()
+                // 내용 iat : 현재 시간
+                // 토큰이 발급된 시간으로 iat은 issued at을 의미
+                .setIssuedAt(now2)
                 .setSubject(authentication.getName())
                 .claim(AUTHORITIES_KEY, authorities)
                 .setExpiration(refreshTokenExpire)
-                .signWith(key, SignatureAlgorithm.ES256)
+                .signWith(key, SignatureAlgorithm.RS256)
                 .compact();
 
         log.info("refreshToken : " + refreshToken);
@@ -80,6 +92,29 @@ public class JwtProvider {
                 .userEmail(authentication.getName())
                 .build();
     }
+
+    // accessToken 생성
+    public TokenDTO createAccessToken(String userEmail) {
+        Long now = (new Date()).getTime();
+        Date now2 = new Date();
+        Date accessTokenExpire = new Date(now + this.accessTokenTime);
+
+        String accessToken = Jwts.builder()
+                .setIssuedAt(now2)
+                .setSubject(userEmail)
+                .setExpiration(accessTokenExpire)
+                .signWith(key, SignatureAlgorithm.RS256)
+                .compact();
+
+        log.info("accessToken : " + accessToken);
+
+        return TokenDTO.builder()
+                .grantType("Bearer ")
+                .accessToken(accessToken)
+                .userEmail(userEmail)
+                .build();
+    }
+
 
     // JWT 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 코드
     // 토큰으로 클레임을 만들고 이를 이용해 유저 객체를 만들어서 최종적으로 authentication 객체를 리턴

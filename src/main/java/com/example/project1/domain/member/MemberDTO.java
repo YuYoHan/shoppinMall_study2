@@ -32,6 +32,7 @@ public class MemberDTO {
     private String provider;
     private String providerId;
 
+
     @Builder
     public MemberDTO(Long userId,
                      String userEmail,

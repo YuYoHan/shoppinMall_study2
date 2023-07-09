@@ -3,6 +3,7 @@ package com.example.project1.config.security;
 import com.example.project1.config.jwt.JwtAccessDeniedHandler;
 import com.example.project1.config.jwt.JwtAuthenticationEntryPoint;
 import com.example.project1.config.jwt.JwtProvider;
+import com.example.project1.config.oauth2.PrincipalOauth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+    private final PrincipalOauth2UserService principalOauth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -28,6 +30,7 @@ public class SecurityConfig {
                 // JWt 방식을 제대로 쓰려고 하면 프론트엔드가 분리된 환경을 가정하고 해야합니다.
                 .csrf().disable()
                 .formLogin().disable()
+                .logout().disable()
                 // JWT 방식은 세션저장을 사용하지 않기 때문에 꺼줍니다.
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
@@ -55,6 +58,19 @@ public class SecurityConfig {
                 .exceptionHandling()
                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 .accessDeniedHandler(new JwtAccessDeniedHandler());
+
+        // oauth2
+        http
+                // oauth2Login() 메서드는 OAuth 2.0 프로토콜을 사용하여 소셜 로그인을 처리하는 기능을 제공합니다.
+                .oauth2Login()
+                // 사용자가 로그인을 하지 않은 상태에서 접근하려는 페이지로 이동할 때
+                // 보여줄 로그인 페이지의 경로를 설정하는 부분입니다.
+                .loginPage("/loginForm")
+                .defaultSuccessUrl("/oauth2Login")
+                // OAuth2 로그인 성공 이후 사용자 정보를 가져올 때 설정 담당
+                .userInfoEndpoint()
+                // OAuth2 로그인 성공 시, 후작업을 진행할 서비스
+                .userService(principalOauth2UserService);
 
         return http.build();
     }

@@ -100,6 +100,7 @@ public class MemberService {
                 .refreshToken(tokenDTO.getRefreshToken())
                 .userEmail(tokenDTO.getUserEmail())
                 .nickName(member.getNickName())
+                .userId(member.getUserId())
                 .build();
 
         log.info("token : " + tokenEntity);
@@ -110,6 +111,7 @@ public class MemberService {
 
         return new ResponseEntity<>(token, headers, HttpStatus.OK);
     }
+
 
     // 회원정보 수정
     public MemberDTO update(MemberDTO memberDTO) {
