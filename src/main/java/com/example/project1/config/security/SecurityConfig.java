@@ -36,14 +36,10 @@ public class SecurityConfig {
 
         http
                 .authorizeRequests()
-                .antMatchers("/api/v1/users/**")
+                .antMatchers("/api/v1/boards/**")
                 .access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
                 .antMatchers("/api/v1/admin/**")
                 .access("hasRole('ROLE_ADMIN')")
-                .antMatchers("/api/v1/users/signUp")
-                .permitAll()
-                .antMatchers("/api/v1/users/login")
-                .permitAll()
                 .anyRequest().permitAll();
 
         http

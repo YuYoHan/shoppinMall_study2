@@ -29,14 +29,20 @@ import java.util.Optional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private  BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final  BCryptPasswordEncoder bCryptPasswordEncoder;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtProvider jwtProvider;
     private final TokenRepository tokenRepository;
 
     // 회원가입
     public String signUp(MemberDTO memberDTO) throws Exception {
+
         try {
+            MemberEntity byUserEmail = memberRepository.findByUserEmail(memberDTO.getUserEmail());
+
+            if (byUserEmail != null) {
+                return "이미 가입된 회원입니다.";
+            }
 
             // 아이디가 없다면 DB에 넣어서 등록 해준다.
             MemberEntity member = MemberEntity.builder()
@@ -50,12 +56,16 @@ public class MemberService {
                     .build();
 
             log.info("member : " + member);
-            memberRepository.save(member);
-            return "회원가입에 성공했습니다.";
-        } catch (Exception e) {
+            MemberEntity save = memberRepository.save(member);
+
+//            MemberDTO memberDTO1 = MemberDTO.toMemberDTO(Optional.of(save));
+
+        return "회원가입에 성공했습니다.";
+    } catch (Exception e) {
             log.error(e.getMessage());
-            return e.getMessage();
+            throw e; // 예외를 던져서 예외 처리를 컨트롤러로 전달
         }
+
     }
 
     // 아이디 조회

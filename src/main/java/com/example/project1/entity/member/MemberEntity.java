@@ -1,5 +1,6 @@
 package com.example.project1.entity.member;
 
+import com.example.project1.domain.member.MemberDTO;
 import com.example.project1.domain.member.UserType;
 import com.example.project1.entity.Base.BaseEntity;
 import lombok.Builder;

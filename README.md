@@ -21,4 +21,3 @@
 - MySQL <br/>
 - Swagger <br/>
 
->>>>>>> 827dd97f28ca131b90a01d588eb40ccbd393abe4
