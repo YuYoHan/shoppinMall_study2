@@ -37,7 +37,8 @@ public class RefreshTokenService {
             // header 에서 받아온 refreshToken 이 같다면 true 입니다.
             if (byRefreshToken.getRefreshToken() != null && byRefreshToken.getRefreshToken().equals(refreshToken)) {
                 // 리프레시 토큰을 유효성 검사를 해주고 validateRefreshToken 담아준다.
-                boolean validateRefreshToken = jwtProvider.validateToken(String.valueOf(byRefreshToken.getRefreshToken()));
+                boolean validateRefreshToken =
+                        jwtProvider.validateToken(String.valueOf(byRefreshToken.getRefreshToken()));
 
 
                 if (validateRefreshToken) {

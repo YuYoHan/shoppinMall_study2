@@ -21,14 +21,13 @@ import java.util.Optional;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/users")
 public class MemberController {
 
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
 
     // 회원 가입
-    @PostMapping("/")
+    @PostMapping("/api/v1/users/")
     // BindingResult 타입의 매개변수를 지정하면 BindingResult 매개 변수가 입력값 검증 예외를 처리한다.
     public ResponseEntity<?> join(@Validated @RequestBody MemberDTO memberDTO,
                                   BindingResult result) throws Exception{
@@ -51,7 +50,7 @@ public class MemberController {
     }
 
     // 회원 조회
-    @GetMapping("/{userId}")
+    @GetMapping("/api/v1/users/{userId}")
     public ResponseEntity<MemberDTO> search(@PathVariable Long userId) throws Exception {
         try {
             MemberDTO search = memberService.search(userId);
@@ -63,12 +62,19 @@ public class MemberController {
     }
 
     // 로그인
-    @PostMapping("/login")
-    public ResponseEntity<TokenDTO> login(@RequestBody MemberDTO memberDTO) throws Exception {
+    @PostMapping("/api/v1/users/login")
+    public ResponseEntity<?> login(@RequestBody MemberDTO memberDTO) throws Exception {
+        log.info("member : " + memberDTO);
         try {
-            return memberService.login(memberDTO.getUserEmail(), memberDTO.getUserPw());
+            log.info("-----------------");
+
+            ResponseEntity<TokenDTO> login =
+                    memberService.login(memberDTO.getUserEmail(), memberDTO.getUserPw());
+            log.info("login : " + login);
+
+            return ResponseEntity.ok().body(login);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("문제가 있습니다");
         }
     }
 
@@ -100,7 +106,7 @@ public class MemberController {
     }
 
     // 회원정보 수정
-    @PutMapping("/")
+    @PutMapping("/api/v1/users/")
     public ResponseEntity<?> update(@RequestBody MemberDTO memberDTO) throws Exception{
         try {
             MemberDTO update = memberService.update(memberDTO);

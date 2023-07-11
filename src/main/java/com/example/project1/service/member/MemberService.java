@@ -18,6 +18,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -29,7 +30,7 @@ import java.util.Optional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final  BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtProvider jwtProvider;
     private final TokenRepository tokenRepository;
@@ -47,7 +48,7 @@ public class MemberService {
             // 아이디가 없다면 DB에 넣어서 등록 해준다.
             MemberEntity member = MemberEntity.builder()
                     .userEmail(memberDTO.getUserEmail())
-                    .userPw(bCryptPasswordEncoder.encode(memberDTO.getUserPw()))
+                    .userPw(passwordEncoder.encode(memberDTO.getUserPw()))
                     .userName(memberDTO.getUserName())
                     .nickName(memberDTO.getNickName())
                     .userType(memberDTO.getUserType())
@@ -60,8 +61,8 @@ public class MemberService {
 
 //            MemberDTO memberDTO1 = MemberDTO.toMemberDTO(Optional.of(save));
 
-        return "회원가입에 성공했습니다.";
-    } catch (Exception e) {
+            return "회원가입에 성공했습니다.";
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw e; // 예외를 던져서 예외 처리를 컨트롤러로 전달
         }
@@ -76,50 +77,103 @@ public class MemberService {
     }
 
     // 로그인
-    public ResponseEntity<TokenDTO>  login(String userEmail, String userPw) throws Exception {
-        // Login ID/PW를 기반으로 UsernamePasswordAuthenticationToken 생성
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(userEmail, userPw);
+    public ResponseEntity<TokenDTO> login(String userEmail, String userPw) throws Exception {
 
-        // 실제 검증(사용자 비밀번호 체크)이 이루어지는 부분
-        // authenticateToken을 이용해서 Authentication 객체를 생성하고
-        // authentication 메서드가 실행될 때
-        // CustomUserDetailsService에서 만든 loadUserbyUsername 메서드가 실행
-        Authentication authentication = authenticationManagerBuilder
-                .getObject()
-                .authenticate(authenticationToken);
+//        // Login ID/PW를 기반으로 UsernamePasswordAuthenticationToken 생성
+//        UsernamePasswordAuthenticationToken authenticationToken =
+//                new UsernamePasswordAuthenticationToken(userEmail, userPw);
+//
+//        log.info("----------------------");
+//        log.info("authenticationToken : " +authenticationToken);
+//        log.info("----------------------");
+//
+//        // 실제 검증(사용자 비밀번호 체크)이 이루어지는 부분
+//        // authenticateToken을 이용해서 Authentication 객체를 생성하고
+//        // authentication 메서드가 실행될 때
+//        // CustomUserDetailsService에서 만든 loadUserbyUsername 메서드가 실행
+//        Authentication authentication = authenticationManagerBuilder
+//                .getObject().authenticate(authenticationToken);
+//
+//        log.info("----------------------");
+//        log.info("authentication : " + authentication);
+//        log.info("----------------------");
+//
+//        // 해당 객체를 SecurityContextHolder에 저장
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//        // authentication 객체를 createToken 메소드를 통해서 생성
+//        // 인증 정보를 기반으로 생성
+//        TokenDTO tokenDTO = jwtProvider.createToken(authentication);
+//
+//        log.info("----------------------");
+//        log.info("tokenDTO : " + tokenDTO);
+//        log.info("----------------------");
+//
+//        HttpHeaders headers = new HttpHeaders();
+//
+//        // response header에 jwt token을 넣어줌
+//        headers.add(JwtAuthenticationFilter.HEADER_AUTHORIZATION, "Bearer " + tokenDTO);
+//
+//        log.info("----------------------");
+//        log.info("headers : " + headers);
+//        log.info("----------------------");
+//
+//        MemberEntity member = memberRepository.findByUserEmail(userEmail);
+//        log.info("member : " + member);
+//
+//        TokenEntity tokenEntity = TokenEntity.builder()
+//                .grantType(tokenDTO.getGrantType())
+//                .accessToken(tokenDTO.getAccessToken())
+//                .refreshToken(tokenDTO.getRefreshToken())
+//                .userEmail(tokenDTO.getUserEmail())
+//                .nickName(member.getNickName())
+//                .userId(member.getUserId())
+//                .build();
+//
+//        log.info("token : " + tokenEntity);
+//
+//        tokenRepository.save(tokenEntity);
+//
+//        return new ResponseEntity<>(tokenDTO, headers, HttpStatus.OK);
 
-        // 해당 객체를 SecurityContextHolder에 저장
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        MemberEntity findUser = memberRepository.findByUserEmail(userEmail);
+        log.info("findUser : " + findUser);
 
-        // authentication 객체를 createToken 메소드를 통해서 생성
-        // 인증 정보를 기반으로 생성
-        TokenDTO tokenDTO = jwtProvider.createToken(authentication);
+        if (findUser != null) {
 
-        HttpHeaders headers = new HttpHeaders();
+            Authentication authentication = new UsernamePasswordAuthenticationToken(userEmail, userPw);
 
-        // response header에 jwt token을 넣어줌
-        headers.add(JwtAuthenticationFilter.HEADER_AUTHORIZATION, "Bearer " + tokenDTO);
+            TokenDTO token = jwtProvider.createToken(authentication);
 
-        MemberEntity member = memberRepository.findByUserEmail(userEmail);
-        log.info("member : " + member);
+            //        // Login ID/PW를 기반으로 UsernamePasswordAuthenticationToken 생성
 
-        TokenEntity tokenEntity = TokenEntity.builder()
-                .grantType(tokenDTO.getGrantType())
-                .accessToken(tokenDTO.getAccessToken())
-                .refreshToken(tokenDTO.getRefreshToken())
-                .userEmail(tokenDTO.getUserEmail())
-                .nickName(member.getNickName())
-                .userId(member.getUserId())
-                .build();
 
-        log.info("token : " + tokenEntity);
+            token = TokenDTO.builder()
+                    .grantType(token.getGrantType())
+                    .accessToken(token.getAccessToken())
+                    .refreshToken(token.getRefreshToken())
+                    .userEmail(findUser.getUserEmail())
+                    .nickName(findUser.getNickName())
+                    .userId(findUser.getUserId())
+                    .build();
 
-        tokenRepository.save(tokenEntity);
 
-        TokenDTO token = TokenDTO.toTokenDTO(tokenEntity);
+            TokenEntity tokenEntity = TokenEntity.builder()
+                    .id(token.getId())
+                    .grantType(token.getGrantType())
+                    .accessToken(token.getAccessToken())
+                    .refreshToken(token.getRefreshToken())
+                    .userEmail(token.getUserEmail())
+                    .nickName(token.getNickName())
+                    .userId(token.getUserId())
+                    .build();
 
-        return new ResponseEntity<>(token, headers, HttpStatus.OK);
+            log.info("token : " + tokenEntity);
+            tokenRepository.save(tokenEntity);
+            return new ResponseEntity<>(token, HttpStatus.OK);
+        } else {
+            return null;
+        }
     }
 
 
@@ -128,7 +182,7 @@ public class MemberService {
 
         MemberEntity member = MemberEntity.builder()
                 .userEmail(memberDTO.getUserEmail())
-                .userPw(bCryptPasswordEncoder.encode(memberDTO.getUserPw()))
+                .userPw(passwordEncoder.encode(memberDTO.getUserPw()))
                 .userName(memberDTO.getUserName())
                 .nickName(memberDTO.getNickName())
                 .userType(memberDTO.getUserType())

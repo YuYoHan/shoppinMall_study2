@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtProvider {
 
-    private static final String AUTHORITIES_KEY = "Authorization";
+    private static final String AUTHORITIES_KEY = "auth";
 
     @Value("${jwt.access.expiration}")
     private long accessTokenTime;
@@ -38,7 +38,7 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(secretByteKey);
     }
 
-    // 유저 정보를 가지고 AccessToken, RefreshToken 을 생성하는 메소드
+//     유저 정보를 가지고 AccessToken, RefreshToken 을 생성하는 메소드
     public TokenDTO createToken(Authentication authentication) {
 
         // 권한 가져오기
@@ -52,9 +52,6 @@ public class JwtProvider {
         // AccessToken 생성
         Date accessTokenExpire = new Date(now + this.accessTokenTime);
         String accessToken = Jwts.builder()
-                // 내용 iat : 현재 시간
-                // 토큰이 발급된 시간으로 iat은 issued at을 의미
-                .setIssuedAt(now2)
                 // 내용 sub : 유저의 이메일
                 // 토큰 제목
                 .setSubject(authentication.getName())
@@ -64,7 +61,7 @@ public class JwtProvider {
                 // 항상 현재 시간 이후로 설정합니다.
                 .setExpiration(accessTokenExpire)
                 // 서명 : 비밀값과 함께 해시값을 ES256 방식으로 암호화
-                .signWith(key, SignatureAlgorithm.RS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         log.info("accessToken : " + accessToken);
@@ -72,13 +69,10 @@ public class JwtProvider {
         // RefreshToken 생성
         Date refreshTokenExpire = new Date(now + this.refreshTokenTime);
         String refreshToken = Jwts.builder()
-                // 내용 iat : 현재 시간
-                // 토큰이 발급된 시간으로 iat은 issued at을 의미
-                .setIssuedAt(now2)
                 .setSubject(authentication.getName())
                 .claim(AUTHORITIES_KEY, authorities)
                 .setExpiration(refreshTokenExpire)
-                .signWith(key, SignatureAlgorithm.RS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         log.info("refreshToken : " + refreshToken);
@@ -93,6 +87,41 @@ public class JwtProvider {
                 .build();
     }
 
+
+    // 위에께 원래 되는데 에러가 발생해서 다른 방법을 찾는 중
+    // v2임
+//    public  TokenDTO createToken(String userEmail) {
+//        long now = (new Date()).getTime();
+//        Date now2 = new Date();
+//
+//
+//
+//        // access token 생성
+//        Date accessTokenExpire = new Date(now + this.accessTokenTime);
+//        String accessToken = Jwts.builder()
+//                .setIssuedAt(now2)
+//                .setSubject(userEmail)
+//                .claim(AUTHORITIES_KEY, authorities)
+//                .setExpiration(accessTokenExpire)
+//                .signWith(key, SignatureAlgorithm.HS256)
+//                .compact();
+//
+//        // refreshToken 생성
+//        Date refreshTokenExpire = new Date(now + this.refreshTokenTime);
+//        String refreshToken = Jwts.builder()
+//                .setSubject(userEmail)
+//                .claim(AUTHORITIES_KEY, authorities)
+//                .setExpiration(refreshTokenExpire)
+//                .signWith(key, SignatureAlgorithm.HS256)
+//                .compact();
+//
+//        return TokenDTO.builder()
+//                .grantType("Bearer ")
+//                .accessToken(accessToken)
+//                .refreshToken(refreshToken)
+//                .build();
+//    }
+
     // accessToken 생성
     public TokenDTO createAccessToken(String userEmail) {
         Long now = (new Date()).getTime();
@@ -103,7 +132,7 @@ public class JwtProvider {
                 .setIssuedAt(now2)
                 .setSubject(userEmail)
                 .setExpiration(accessTokenExpire)
-                .signWith(key, SignatureAlgorithm.RS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         log.info("accessToken : " + accessToken);
@@ -114,6 +143,7 @@ public class JwtProvider {
                 .userEmail(userEmail)
                 .build();
     }
+
 
 
     // JWT 토큰을 복호화하여 토큰에 들어있는 정보를 꺼내는 코드

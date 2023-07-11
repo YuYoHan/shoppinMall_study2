@@ -16,12 +16,12 @@ import java.io.IOException;
 
 // 클라이언트 요청 시 JWT 인증을 하기 위해 설치하는 커스텀 필터로
 // UsernamePasswordAuthenticationFiler 이전에 실행된다.
-// 이전에 실행된다는 뜻은 JwtAuthenticationFilter를 통과하면
+// 이전에 실행된다는 뜻은 JwtAuthenticationFilter 를 통과하면
 // UsernamePasswordAuthenticationFilter 이후의 필터는 통과한 것으로 본다는 뜻이다.
-// 쉽게 말해서, Username + Password를 통한 인증을 Jwt를 통해 수행한다는 것이다.
+// 쉽게 말해서, Username + Password 를 통한 인증을 Jwt 를 통해 수행한다는 것이다.
 
 // JWT 방식은 세션과 다르게 Filter 하나를 추가해야 합니다.
-// 이제 사용자가 로그인을 했을 때, Request에 가지고 있는 Token을 해석해주는 로직이 필요합니다.
+// 이제 사용자가 로그인을 했을 때, Request 에 가지고 있는 Token 을 해석해주는 로직이 필요합니다.
 // 이 역할을 해주는것이 JwtAuthenticationFilter입니다.
 // 세부 비즈니스 로직들은 TokenProvider에 적어둡니다. 일종의 service 클래스라고 생각하면 편합니다.
 // 1. 사용자의 Request Header에 토큰을 가져옵니다.

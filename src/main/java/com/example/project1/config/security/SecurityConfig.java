@@ -11,7 +11,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
@@ -40,7 +46,9 @@ public class SecurityConfig {
                 .access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
                 .antMatchers("/api/v1/admin/**")
                 .access("hasRole('ROLE_ADMIN')")
-                .anyRequest().permitAll();
+                .antMatchers("/swagger-resources/**").permitAll()
+                        .antMatchers("/swagger-ui/**").permitAll()
+                        .antMatchers("/api/v1/users/**").permitAll();
 
         http
                 // JWT Token을 위한 Filter를 아래에서 만들어 줄건데,
@@ -59,15 +67,20 @@ public class SecurityConfig {
         http
                 // oauth2Login() 메서드는 OAuth 2.0 프로토콜을 사용하여 소셜 로그인을 처리하는 기능을 제공합니다.
                 .oauth2Login()
-                // 사용자가 로그인을 하지 않은 상태에서 접근하려는 페이지로 이동할 때
-                // 보여줄 로그인 페이지의 경로를 설정하는 부분입니다.
-                .loginPage("/loginForm")
-                .defaultSuccessUrl("/oauth2Login")
                 // OAuth2 로그인 성공 이후 사용자 정보를 가져올 때 설정 담당
                 .userInfoEndpoint()
                 // OAuth2 로그인 성공 시, 후작업을 진행할 서비스
                 .userService(principalOauth2UserService);
 
         return http.build();
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        String idForEncode = "bcrypt";
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put(idForEncode, new BCryptPasswordEncoder());
+
+        return new DelegatingPasswordEncoder(idForEncode, encoders);
     }
 }

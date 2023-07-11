@@ -19,6 +19,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -58,7 +59,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
             log.info("구글과 네이버만 지원합니다.");
         }
 
-        String provider = oAuth2UserInfo.getProvider();
+        String provider = Objects.requireNonNull(oAuth2UserInfo).getProvider();
         String providerId = oAuth2UserInfo.getProviderId();
         // 예) google_109742856182916427686
         String userName = provider + "_" + providerId;

@@ -42,3 +42,6 @@ spring:
 logging:
   level:
     org.hibernate.type: trace
+
+server:
+  port: 9090

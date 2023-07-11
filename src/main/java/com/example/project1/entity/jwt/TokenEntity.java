@@ -26,7 +26,14 @@ public class TokenEntity {
 
 
     @Builder
-    public TokenEntity(String grantType, String accessToken, String refreshToken, String userEmail, String nickName, Long userId) {
+    public TokenEntity(Long id,
+                       String grantType,
+                       String accessToken,
+                       String refreshToken,
+                       String userEmail,
+                       String nickName,
+                       Long userId) {
+        this.id = id;
         this.grantType = grantType;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
