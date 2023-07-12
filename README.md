@@ -1,7 +1,7 @@
 # project_study1
 프로젝트 연습 
 
-<<<<<<< HEAD
+
 <!--    /oauth2/authorization/google 이거는 내마음대로 바꾸는 것이 아니라 고정이다.
         google api 센터에서 리디렉션 URI를 고정으로 쓰는 것처럼 말이다.
         ex) http://localhost:8080/login/oauth2/code/google -->
