@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -26,7 +27,7 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
-    private  BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final MemberRepository memberRepository;
 
     // 구글로부터 받은 userReuest 데이터에 대한 후처리되는 함수
@@ -59,7 +60,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
             log.info("구글과 네이버만 지원합니다.");
         }
 
-        String provider = Objects.requireNonNull(oAuth2UserInfo).getProvider();
+        String provider = oAuth2UserInfo.getProvider();
         String providerId = oAuth2UserInfo.getProviderId();
         // 예) google_109742856182916427686
         String userName = provider + "_" + providerId;
@@ -82,8 +83,6 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
                     .build();
 
             memberRepository.save(member);
-
-
         } else {
             log.info("로그인을 이미 한적이 있습니다. 당신은 자동회원가입이 되어 있습니다.");
         }

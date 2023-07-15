@@ -46,6 +46,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 
         // Request Header에서 JWT 토큰을 추출
+        //  요청 헤더에서 JWT 토큰을 추출하는 역할
         String jwt = resolveToken(httpServletRequest);
         String requestURI = httpServletRequest.getRequestURI();
 
@@ -63,6 +64,8 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
 
 
     // Request Header 에서 토큰 정보를 꺼내오기 위한 메소드
+    // HEADER_AUTHORIZATION로 정의된 헤더 이름을 사용하여 토큰을 찾고,
+    // 토큰이 "Bearer "로 시작하는 경우에만 실제 토큰 값을 반환
     private String resolveToken(HttpServletRequest httpServletRequest) {
         String bearerToken = httpServletRequest.getHeader(HEADER_AUTHORIZATION);
 

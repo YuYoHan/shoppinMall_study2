@@ -4,6 +4,7 @@ import com.example.project1.config.jwt.JwtAuthenticationFilter;
 import com.example.project1.config.jwt.JwtProvider;
 import com.example.project1.domain.jwt.TokenDTO;
 import com.example.project1.domain.member.MemberDTO;
+import com.example.project1.domain.member.UserType;
 import com.example.project1.entity.jwt.TokenEntity;
 import com.example.project1.entity.member.MemberEntity;
 import com.example.project1.repository.jwt.TokenRepository;
@@ -16,13 +17,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -197,5 +202,45 @@ public class MemberService {
         MemberDTO memberDto = MemberDTO.toMemberDTO(Optional.of(member));
         log.info("memberDto : " + memberDto);
         return memberDto;
+    }
+
+    // 소셜 로그인 성공시 jwt 반환
+    // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성하는 메서드
+    public ResponseEntity<TokenDTO> createToken(OAuth2User oAuth2User) {
+        String userEmail = oAuth2User.getAttribute("email");
+        log.info("userEmail : " + userEmail);
+
+        MemberEntity findMember = memberRepository.findByUserEmail(userEmail);
+
+        //  권한 정보 추출
+        List<GrantedAuthority> authorities = getAuthoritiesForUser(findMember);
+
+        // UserDetails 객체 생성 (사용자의 아이디 정보를 활용)
+        // 첫 번째 인자 : username 사용자 아이디
+        // 두 번째 인자 : 사용자의 비밀번호
+        // 세 번째 인자 : 사용자의 권한 정보를 담은 컬렉션
+        UserDetails userDetails = new User(userEmail, "", authorities);
+        log.info("userDetails : " + userDetails);
+        TokenDTO token = jwtProvider.createToken2(userDetails);
+        log.info("token : " + token);
+
+        return ResponseEntity.ok().body(token);
+    }
+
+    private List<GrantedAuthority> getAuthoritiesForUser(MemberEntity member) {
+
+        MemberEntity byUserEmail = memberRepository.findByUserEmail(member.getUserEmail());
+
+        // 예시: 데이터베이스에서 사용자의 권한 정보를 조회하는 로직을 구현
+        // member 객체를 이용하여 데이터베이스에서 사용자의 권한 정보를 조회하는 예시로 대체합니다.
+        UserType role = member.getUserType();  // 사용자의 권한 정보를 가져오는 로직 (예시)
+
+        if(byUserEmail.equals(role)) {
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority(role.name()));
+            return authorities;
+        }
+        // 빈 권한 리턴
+        return Collections.emptyList();
     }
 }

@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -92,6 +95,15 @@ public class MemberController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // Oauth2로 JWT 발급
+    @GetMapping("/success-oauth")
+    public ResponseEntity<?> createToken(@AuthenticationPrincipal OAuth2User oAuth2User) {
+        // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성합니다.
+        ResponseEntity<TokenDTO> token = memberService.createToken(oAuth2User);
+
+        return ResponseEntity.ok().body(token);
     }
 
 
