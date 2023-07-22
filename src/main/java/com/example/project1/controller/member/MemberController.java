@@ -1,7 +1,9 @@
 package com.example.project1.controller.member;
 
+import com.example.project1.config.auth.PrincipalDetails;
 import com.example.project1.domain.jwt.TokenDTO;
 import com.example.project1.domain.member.MemberDTO;
+import com.example.project1.repository.member.MemberRepository;
 import com.example.project1.service.jwt.RefreshTokenService;
 import com.example.project1.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
 
 @RestController
 @Slf4j
@@ -43,8 +43,6 @@ public class MemberController {
 
         try {
             String join = memberService.signUp(memberDTO);
-            // 아이디가 있으면 아이디가 존재합니다 리턴
-            // 아이디가 없으면 회원가입에 성공했습니다가 리턴
             return ResponseEntity.ok().body(join);
         } catch (Exception e) {
             log.error("예외 : " + e.getMessage());
@@ -77,7 +75,7 @@ public class MemberController {
 
             return ResponseEntity.ok().body(login);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("문제가 있습니다");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
@@ -97,14 +95,35 @@ public class MemberController {
         }
     }
 
-    // Oauth2로 JWT 발급
+    // Oauth2 google로 JWT 발급
     @GetMapping("/success-oauth")
-    public ResponseEntity<?> createToken(@AuthenticationPrincipal OAuth2User oAuth2User) {
-        // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성합니다.
-        ResponseEntity<TokenDTO> token = memberService.createToken(oAuth2User);
+    public ResponseEntity<?> createTokenForGoogle(@AuthenticationPrincipal OAuth2User oAuth2User) {
 
-        return ResponseEntity.ok().body(token);
+        if(oAuth2User == null) {
+            log.info("받아올 정보가 없습니다 ㅠㅠ");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("정보가 없어....");
+        } else {
+            log.info("oauth2User 정보를 받아오자 : " + oAuth2User);
+
+            // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성합니다.
+            ResponseEntity<TokenDTO> token = memberService.createToken(oAuth2User);
+            log.info("token : " + token);
+
+            return ResponseEntity.ok().body(token);
+        }
     }
+
+
+
+    // Oauth2 naver로 JWT 발급
+//    @GetMapping("/oauth2/authorization/naver")
+//    public ResponseEntity<?> createTokenForNaver() {
+//
+//
+//
+//        ResponseEntity<TokenDTO> token = memberService.createToken(oAuth2User);
+//        return ResponseEntity.ok().body(token);
+//    }
 
 
     // 로그아웃
@@ -126,5 +145,12 @@ public class MemberController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("잘못된 요청");
         }
+    }
+
+    // 회원 탈퇴
+    @DeleteMapping("/api/v1/users/{userId}")
+    public String remove(@PathVariable Long userId) {
+        String remove = memberService.remove(userId);
+        return remove;
     }
 }

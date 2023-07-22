@@ -1,5 +1,6 @@
 package com.example.project1.entity.jwt;
 
+import com.example.project1.domain.member.UserType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,8 +10,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.util.Date;
 
-@Entity
+@Entity(name = "token")
 @Getter
 @NoArgsConstructor
 @ToString
@@ -23,6 +25,9 @@ public class TokenEntity {
     private String userEmail;
     private String nickName;
     private Long userId;
+    private Date accessTokenTime;
+    private Date refreshTokenTime;
+    private UserType userType;
 
 
     @Builder
@@ -32,7 +37,11 @@ public class TokenEntity {
                        String refreshToken,
                        String userEmail,
                        String nickName,
-                       Long userId) {
+                       Long userId,
+                       Date accessTokenTime,
+                       Date refreshTokenTime,
+                       UserType userType
+                       ) {
         this.id = id;
         this.grantType = grantType;
         this.accessToken = accessToken;
@@ -40,5 +49,8 @@ public class TokenEntity {
         this.userEmail = userEmail;
         this.nickName = nickName;
         this.userId = userId;
+        this.accessTokenTime = accessTokenTime;
+        this.refreshTokenTime = refreshTokenTime;
+        this.userType = userType;
     }
 }

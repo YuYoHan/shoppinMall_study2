@@ -22,7 +22,8 @@ import java.util.Map;
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
+// @EnableGlobalMethodSecurity 어노테이션은 Spring Security에서 메서드 수준의 보안 설정을 활성화하는데 사용되는 어노테이션입니다.
+//@EnableGlobalMethodSecurity(securedEnabled = true, prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
@@ -42,10 +43,16 @@ public class SecurityConfig {
 
         http
                 .authorizeRequests()
-                .antMatchers("/api/v1/boards/**")
+                .antMatchers("/api/v1/boards/write")
+                .access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
+                .antMatchers("/api/v1/boards/modify")
+                .access("hasRole('ROLE_USER')")
+                .antMatchers("/api/v1/boards/remove")
                 .access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
                 .antMatchers("/api/v1/admin/**")
                 .access("hasRole('ROLE_ADMIN')")
+                // /success-oauth 엔드포인트에 대해 인증된 사용자만 접근 가능하도록 설정
+//                .antMatchers("/success-oauth").authenticated()
                 .antMatchers("/swagger-resources/**").permitAll()
                         .antMatchers("/swagger-ui/**").permitAll()
                         .antMatchers("/api/v1/users/**").permitAll();
@@ -67,11 +74,13 @@ public class SecurityConfig {
         http
                 // oauth2Login() 메서드는 OAuth 2.0 프로토콜을 사용하여 소셜 로그인을 처리하는 기능을 제공합니다.
                 .oauth2Login()
-                .defaultSuccessUrl("/success-oauth")
-                // OAuth2 로그인 성공 이후 사용자 정보를 가져올 때 설정 담당
-                .userInfoEndpoint()
-                // OAuth2 로그인 성공 시, 후작업을 진행할 서비스
-                .userService(principalOauth2UserService);
+//                .defaultSuccessUrl("/success-oauth")
+                    // OAuth2 로그인 성공 이후 사용자 정보를 가져올 때 설정 담당
+                    .userInfoEndpoint()
+                        // OAuth2 로그인 성공 시, 후작업을 진행할 서비스
+                        .userService(principalOauth2UserService)
+                    .and()
+                        .defaultSuccessUrl("/success-oauth");
 
         return http.build();
     }

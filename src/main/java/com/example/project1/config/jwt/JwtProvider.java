@@ -1,8 +1,8 @@
 package com.example.project1.config.jwt;
 
+import com.example.project1.config.auth.PrincipalDetails;
 import com.example.project1.domain.jwt.TokenDTO;
-import com.example.project1.repository.member.MemberRepository;
-import com.nimbusds.oauth2.sdk.token.RefreshToken;
+import com.example.project1.domain.member.UserType;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,10 +16,7 @@ import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.Keys;
 import javax.xml.bind.DatatypeConverter;
 import java.security.Key;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,15 +40,31 @@ public class JwtProvider {
     }
 
 //     유저 정보를 가지고 AccessToken, RefreshToken 을 생성하는 메소드
-    public TokenDTO createToken(Authentication authentication) {
+    public TokenDTO createToken(Authentication authentication, List<GrantedAuthority> authorities) {
+        //  UsernamePasswordAuthenticationToken
+        //  [Principal=zxzz45@naver.com, Credentials=[PROTECTED], Authenticated=false, Details=null, Granted Authorities=[]]
+        // 여기서 Authenticated=false는 아직 정상임
+        // 이 시점에서는 아직 실제로 인증이 이루어지지 않았기 때문에 Authenticated 속성은 false로 설정
+        // 인증 과정은 AuthenticationManager와 AuthenticationProvider에서 이루어지며,
+        // 인증이 성공하면 Authentication 객체의 isAuthenticated() 속성이 true로 변경됩니다.
+        log.info("authentication in JwtProvider : " + authentication);
+
+        // userType in JwtProvider : ROLE_USER
+        log.info("userType in JwtProvider : " + authorities);
 
         // 권한 가져오기
         //  authentication 객체에서 권한 정보(GrantedAuthority)를 가져와 문자열 형태로 변환한 후,
         //  쉼표로 구분하여 조인한 결과를 authorities 변수에 저장합니다. 따라서 authorities는 권한 정보를 문자열 형태로 가지게 됩니다.
         // 권한 정보를 문자열로 변환하여 클레임에 추가하는 방식
-        String authorities = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+//        String authorities = authentication.getAuthorities().stream()
+//                .map(GrantedAuthority::getAuthority)
+//                .collect(Collectors.joining(","));
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
+
+        log.info("claims : " + claims);
+
 
         long now = (new Date()).getTime();
         Date now2 = new Date();
@@ -61,10 +74,14 @@ public class JwtProvider {
         String accessToken = Jwts.builder()
                 // 내용 sub : 유저의 이메일
                 // 토큰 제목
+                // JWT의 "sub" 클레임을 설정하는 메서드입니다.
+                // "sub" 클레임은 일반적으로 사용자를 식별하는 용도로 사용되며,
+                // 이메일과 같은 사용자의 고유한 식별자를 담고 있을 수 있습니다.
                 .setSubject(authentication.getName())
                 .setIssuedAt(now2)
                 // 클레임 id : 유저 ID
-                .claim(AUTHORITIES_KEY, authorities)
+//                .claim(AUTHORITIES_KEY, authorities)
+                .setClaims(claims)
                 // 내용 exp : 토큰 만료 시간, 시간은 NumericDate 형식(예: 1480849143370)으로 하며
                 // 항상 현재 시간 이후로 설정합니다.
                 .setExpiration(accessTokenExpire)
@@ -72,24 +89,42 @@ public class JwtProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        log.info("accessToken : " + accessToken);
+
+//         Claims claim = Jwts.parserBuilder()
+//                .setSigningKey(key)
+//                        .build()
+//                                .parseClaimsJws(accessToken).getBody();
+
+
+        // accessToken in JwtProvider : eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ6eHp6NDVAbmF2ZXIuY2
+        // 9tIiwiaWF0IjoxNjg5OTk1MzM3LCJhdXRoIjoiUk9MRV9VU0VSIiwiZXhwIjoxNjkzNTk1MzM3fQ.2_2PR-A
+        // X9N0jKDyA7LpK7xRRBZBYZ17_f8Jq2TY4ny8
+        log.info("accessToken in JwtProvider : " + accessToken);
+
+        // claim에서 auth 확인 in JwtProvider : ROLE_USER
+        log.info("claim에서 accessToken에 담김 auth 확인 in JwtProvider : " + claims);
 
         // RefreshToken 생성
         Date refreshTokenExpire = new Date(now + this.refreshTokenTime);
         String refreshToken = Jwts.builder()
                 .setSubject(authentication.getName())
-                .claim(AUTHORITIES_KEY, authorities)
+                .setClaims(claims)
                 .setIssuedAt(now2)
                 .setExpiration(refreshTokenExpire)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        log.info("refreshToken : " + refreshToken);
+
+
+        log.info("refreshToken in JwtProvider : " + refreshToken);
+        log.info("claim에서 refreshToken에 담긴 auth 확인 in JwtProvider : " + claims);
 
         return TokenDTO.builder()
-                .grantType("Bearer")
+                .grantType("Bearer ")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .accessTokenTime(accessTokenExpire)
+                .refreshTokenTime(refreshTokenExpire)
                 // principalDeatails에서 getUserName 메소드가 반환한 것을 담아준다.
                 // 이메일을 반환하도록 구성했으니 이메일이 반환됩니다.
                 .userEmail(authentication.getName())
@@ -105,7 +140,9 @@ public class JwtProvider {
         // claims.put("roles", userDetails.getAuthorities()) 코드는 사용자의 권한 정보를 클레임에 추가하는 것입니다.
         // 클레임에는 "roles"라는 키로 사용자의 권한 정보가 저장되며, 해당 권한 정보는 JWT의 페이로드 부분에 포함됩니다.
         Claims claims = Jwts.claims().setSubject(userDetails.getUsername());
-        claims.put("roles", userDetails.getAuthorities());
+        claims.put("auth", userDetails.getAuthorities());
+
+        log.info("claims : " + claims);
 
         // access token
         Date accessTokenExpire = new Date(now + this.accessTokenTime);
@@ -127,93 +164,45 @@ public class JwtProvider {
                 .compact();
 
         return TokenDTO.builder()
-                .grantType("Bearer")
+                .grantType("Bearer ")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .userEmail(userDetails.getUsername())
                 .build();
     }
 
-
-    // 위에께 원래 되는데 에러가 발생해서 다른 방법을 찾는 중
-    // v2임
-//    public  TokenDTO createToken(String userEmail) {
-//        long now = (new Date()).getTime();
-//        Date now2 = new Date();
-//
-//
-//
-//        // access token 생성
-//        Date accessTokenExpire = new Date(now + this.accessTokenTime);
-//        String accessToken = Jwts.builder()
-//                .setIssuedAt(now2)
-//                .setSubject(userEmail)
-//                .claim(AUTHORITIES_KEY, authorities)
-//                .setExpiration(accessTokenExpire)
-//                .signWith(key, SignatureAlgorithm.HS256)
-//                .compact();
-//
-//        // refreshToken 생성
-//        Date refreshTokenExpire = new Date(now + this.refreshTokenTime);
-//        String refreshToken = Jwts.builder()
-//                .setSubject(userEmail)
-//                .claim(AUTHORITIES_KEY, authorities)
-//                .setExpiration(refreshTokenExpire)
-//                .signWith(key, SignatureAlgorithm.HS256)
-//                .compact();
-//
-//        return TokenDTO.builder()
-//                .grantType("Bearer ")
-//                .accessToken(accessToken)
-//                .refreshToken(refreshToken)
-//                .build();
-//    }
-
     // accessToken 생성
     // 리프레시 토큰을 사용하여 새로운 액세스 토큰을 생성하는 로직을 구현
-    public TokenDTO createAccessToken(String refreshToken, List<GrantedAuthority> authorities) {
+    public TokenDTO createAccessToken(String userEmail, List<GrantedAuthority> authorities) {
         Long now = (new Date()).getTime();
         Date now2 = new Date();
         Date accessTokenExpire = new Date(now + this.accessTokenTime);
 
-        String userEmail = extractUserEmailFromToken(refreshToken);
+        log.info("authorities : " + authorities);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
+
+        log.info("claims : " + claims);
 
         String accessToken = Jwts.builder()
                 .setIssuedAt(now2)
                 .setSubject(userEmail)
                 .setExpiration(accessTokenExpire)
-                .claim(AUTHORITIES_KEY, authorities )
+                .setClaims(claims)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        log.info("accessToken : " + accessToken);
+        log.info("accessToken in JwtProvider : " + accessToken);
+
+//        log.info("claim에서 accessToken에 담김 auth 확인 in JwtProvider : " + auth);
 
         return TokenDTO.builder()
                 .grantType("Bearer ")
                 .accessToken(accessToken)
                 .userEmail(userEmail)
+                .accessTokenTime(accessTokenExpire)
                 .build();
-    }
-
-    // 리프레시 토큰의 유효성을 검증하는 로직을 구현
-    // 예를 들어, 토큰 서명 검증 및 만료 시간 확인 등을 수행
-    public boolean validateRefreshToken(String refreshToken) {
-        try {
-            // 토큰의 유효성을 검증하는 로직을 구현
-            // 예를 들어, 토큰의 서명을 확인하고 만료 시간을 검사합니다.
-            // 유효한 토큰인 경우 true를 반환하고, 그렇지 않은 경우 false를 반환합니다.
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(refreshToken);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-    // 리프레시 토큰에서 사용자 이메일을 추출하는 로직을 구현
-    // 예를 들어, 토큰의 특정 클레임에서 사용자 이메일을 추출하여 반환
-    public String extractUserEmailFromToken(String refreshToken) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(refreshToken).getBody();
-        // 사용자 이메일을 추출하는 로직을 구현하여 결과를 반환
-        return claims.getSubject();
     }
 
 
@@ -223,20 +212,23 @@ public class JwtProvider {
     public Authentication getAuthentication(String token) {
         // 토큰 복호화 메소드
         Claims claims = parseClaims(token);
+        log.info("claims in JwtProvider  : " + claims);
 
         if(claims.get("auth") == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
         }
 
+        Object auth = claims.get("auth");
+        log.info("auth in JwtProvider : " + auth);
 
         // 클레임 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                Arrays.stream(claims.get("auth").toString().split(","))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
         // UserDetails 객체를 만들어서 Authentication 리턴
-        User principal = new User(claims.getSubject(), "", authorities);
+        UserDetails principal = new User(claims.getSubject(), "", authorities);
 
         return new UsernamePasswordAuthenticationToken(principal, token, authorities);
     }

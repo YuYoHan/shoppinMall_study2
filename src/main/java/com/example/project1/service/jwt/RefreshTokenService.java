@@ -33,9 +33,11 @@ public class RefreshTokenService {
 
     public ResponseEntity<TokenDTO> createAccessToken(String refreshToken) {
 
-        if(jwtProvider.validateRefreshToken(refreshToken)) {
+        // refreshToken 유효성 검사하고 true면 넘어감
+        if(jwtProvider.validateToken(refreshToken)) {
+            TokenEntity findRefreshTokenEmail = tokenRepository.findByRefreshToken(refreshToken);
             // 아이디 추출
-            String userEmail = jwtProvider.extractUserEmailFromToken(refreshToken);
+            String userEmail = findRefreshTokenEmail.getUserEmail();
             log.info("userEmail : " + userEmail);
             MemberEntity member = memberRepository.findByUserEmail(userEmail);
             log.info("member : " + member);
@@ -45,22 +47,33 @@ public class RefreshTokenService {
             TokenDTO accessToken = jwtProvider.createAccessToken(userEmail, authoritiesForUser);
             log.info("accessToken : " + accessToken);
 
-            HttpHeaders headers = new HttpHeaders();
-            // response header에 jwt token을 넣어줌
-            headers.add(JwtAuthenticationFilter.HEADER_AUTHORIZATION, "Bearer " + accessToken);
+
+            accessToken = TokenDTO.builder()
+                    .grantType(accessToken.getGrantType())
+                    .accessToken(accessToken.getAccessToken())
+                    .userEmail(accessToken.getUserEmail())
+                    .nickName(member.getNickName())
+                    .userId(member.getUserId())
+                    .accessTokenTime(accessToken.getAccessTokenTime())
+                    .build();
+
             TokenEntity tokenEntity = TokenEntity.builder()
                     .grantType(accessToken.getGrantType())
                     .accessToken(accessToken.getAccessToken())
-                    .userEmail(userEmail)
-                    .nickName(member.getNickName())
-                    .userId(member.getUserId())
+                    .userEmail(accessToken.getUserEmail())
+                    .nickName(accessToken.getNickName())
+                    .userId(accessToken.getUserId())
+                    .accessTokenTime(accessToken.getAccessTokenTime())
                     .build();
 
             log.info("token : " + tokenEntity);
             tokenRepository.save(tokenEntity);
-            TokenDTO token2 = TokenDTO.toTokenDTO(tokenEntity);
 
-            return new ResponseEntity<>(token2, headers, HttpStatus.OK);
+            HttpHeaders headers = new HttpHeaders();
+            // response header에 jwt token을 넣어줌
+            headers.add(JwtAuthenticationFilter.HEADER_AUTHORIZATION, "Bearer " + accessToken);
+
+            return new ResponseEntity<>(accessToken, headers, HttpStatus.OK);
         } else {
             throw new IllegalArgumentException("Unexpected token");
                 }
@@ -74,8 +87,9 @@ public class RefreshTokenService {
         // member 객체를 이용하여 데이터베이스에서 사용자의 권한 정보를 조회하는 예시로 대체합니다.
         UserType role = member.getUserType();  // 사용자의 권한 정보를 가져오는 로직 (예시)
 
+        log.info("role : " + role.name());
         List<GrantedAuthority> authorities = new ArrayList<>();
-            authorities.add(new SimpleGrantedAuthority(role.name()));
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
         return authorities;
     }
 }

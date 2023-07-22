@@ -1,8 +1,8 @@
 package com.example.project1.entity.member;
 
-import com.example.project1.domain.member.MemberDTO;
 import com.example.project1.domain.member.UserType;
 import com.example.project1.entity.Base.BaseEntity;
+import com.example.project1.entity.member.embedded.AddressEntity;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 
-@Entity
+@Entity(name = "member")
 @Getter
 @ToString
 @NoArgsConstructor
@@ -39,8 +39,18 @@ public class MemberEntity extends BaseEntity {
     private String provider;
     private String providerId;
 
+    @Embedded
+    private AddressEntity address;
+
     @Builder
-    public MemberEntity(String userName, String userEmail, String userPw, String nickName, UserType userType, String provider, String providerId) {
+    public MemberEntity(String userName,
+                        String userEmail,
+                        String userPw,
+                        String nickName,
+                        UserType userType,
+                        String provider,
+                        String providerId,
+                        AddressEntity address) {
         this.userName = userName;
         this.userEmail = userEmail;
         this.userPw = userPw;
@@ -48,6 +58,7 @@ public class MemberEntity extends BaseEntity {
         this.userType = userType;
         this.provider = provider;
         this.providerId = providerId;
+        this.address = address;
     }
 
 

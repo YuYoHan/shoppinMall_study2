@@ -1,12 +1,15 @@
 package com.example.project1.service.member;
 
+import com.example.project1.config.auth.PrincipalDetails;
 import com.example.project1.config.jwt.JwtAuthenticationFilter;
 import com.example.project1.config.jwt.JwtProvider;
 import com.example.project1.domain.jwt.TokenDTO;
 import com.example.project1.domain.member.MemberDTO;
 import com.example.project1.domain.member.UserType;
+import com.example.project1.domain.member.embedded.AddressDTO;
 import com.example.project1.entity.jwt.TokenEntity;
 import com.example.project1.entity.member.MemberEntity;
+import com.example.project1.entity.member.embedded.AddressEntity;
 import com.example.project1.repository.jwt.TokenRepository;
 import com.example.project1.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +22,8 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
@@ -48,25 +49,31 @@ public class MemberService {
 
             if (byUserEmail != null) {
                 return "이미 가입된 회원입니다.";
-            }
+            } else {
+                // 아이디가 없다면 DB에 넣어서 등록 해준다.
+                MemberEntity member = MemberEntity.builder()
+                        .userEmail(memberDTO.getUserEmail())
+                        .userPw(passwordEncoder.encode(memberDTO.getUserPw()))
+                        .userName(memberDTO.getUserName())
+                        .nickName(memberDTO.getNickName())
+                        .userType(memberDTO.getUserType())
+                        .provider(memberDTO.getProvider())
+                        .providerId(memberDTO.getProviderId())
+                        .address(AddressEntity.builder()
+                                .userAddr(memberDTO.getAddressDTO().getUserAddr())
+                                .userAddrDetail(memberDTO.getAddressDTO().getUserAddrDetail())
+                                .userAddrEtc(memberDTO.getAddressDTO().getUserAddrEtc())
+                                .build())
+                        .build();
 
-            // 아이디가 없다면 DB에 넣어서 등록 해준다.
-            MemberEntity member = MemberEntity.builder()
-                    .userEmail(memberDTO.getUserEmail())
-                    .userPw(passwordEncoder.encode(memberDTO.getUserPw()))
-                    .userName(memberDTO.getUserName())
-                    .nickName(memberDTO.getNickName())
-                    .userType(memberDTO.getUserType())
-                    .provider(memberDTO.getProvider())
-                    .providerId(memberDTO.getProviderId())
-                    .build();
-
-            log.info("member : " + member);
-            MemberEntity save = memberRepository.save(member);
+                log.info("member : " + member);
+                memberRepository.save(member);
 
 //            MemberDTO memberDTO1 = MemberDTO.toMemberDTO(Optional.of(save));
 
-            return "회원가입에 성공했습니다.";
+                return "회원가입에 성공했습니다.";
+            }
+
         } catch (Exception e) {
             log.error(e.getMessage());
             throw e; // 예외를 던져서 예외 처리를 컨트롤러로 전달
@@ -81,104 +88,101 @@ public class MemberService {
         return memberDTO;
     }
 
+    // 회원 삭제
+    public String remove(Long userId) {
+        MemberEntity member = memberRepository.deleteByUserId(userId);
+
+        if(member == null) {
+            return "회원 탈퇴 완료!";
+        } else {
+            return "회원 탈퇴 실패!";
+        }
+    }
+
     // 로그인
     public ResponseEntity<TokenDTO> login(String userEmail, String userPw) throws Exception {
-
-//        // Login ID/PW를 기반으로 UsernamePasswordAuthenticationToken 생성
-//        UsernamePasswordAuthenticationToken authenticationToken =
-//                new UsernamePasswordAuthenticationToken(userEmail, userPw);
-//
-//        log.info("----------------------");
-//        log.info("authenticationToken : " +authenticationToken);
-//        log.info("----------------------");
-//
-//        // 실제 검증(사용자 비밀번호 체크)이 이루어지는 부분
-//        // authenticateToken을 이용해서 Authentication 객체를 생성하고
-//        // authentication 메서드가 실행될 때
-//        // CustomUserDetailsService에서 만든 loadUserbyUsername 메서드가 실행
-//        Authentication authentication = authenticationManagerBuilder
-//                .getObject().authenticate(authenticationToken);
-//
-//        log.info("----------------------");
-//        log.info("authentication : " + authentication);
-//        log.info("----------------------");
-//
-//        // 해당 객체를 SecurityContextHolder에 저장
-//        SecurityContextHolder.getContext().setAuthentication(authentication);
-//
-//        // authentication 객체를 createToken 메소드를 통해서 생성
-//        // 인증 정보를 기반으로 생성
-//        TokenDTO tokenDTO = jwtProvider.createToken(authentication);
-//
-//        log.info("----------------------");
-//        log.info("tokenDTO : " + tokenDTO);
-//        log.info("----------------------");
-//
-//        HttpHeaders headers = new HttpHeaders();
-//
-//        // response header에 jwt token을 넣어줌
-//        headers.add(JwtAuthenticationFilter.HEADER_AUTHORIZATION, "Bearer " + tokenDTO);
-//
-//        log.info("----------------------");
-//        log.info("headers : " + headers);
-//        log.info("----------------------");
-//
-//        MemberEntity member = memberRepository.findByUserEmail(userEmail);
-//        log.info("member : " + member);
-//
-//        TokenEntity tokenEntity = TokenEntity.builder()
-//                .grantType(tokenDTO.getGrantType())
-//                .accessToken(tokenDTO.getAccessToken())
-//                .refreshToken(tokenDTO.getRefreshToken())
-//                .userEmail(tokenDTO.getUserEmail())
-//                .nickName(member.getNickName())
-//                .userId(member.getUserId())
-//                .build();
-//
-//        log.info("token : " + tokenEntity);
-//
-//        tokenRepository.save(tokenEntity);
-//
-//        return new ResponseEntity<>(tokenDTO, headers, HttpStatus.OK);
 
         MemberEntity findUser = memberRepository.findByUserEmail(userEmail);
         log.info("findUser : " + findUser);
 
+
         if (findUser != null) {
+            // 사용자가 입력한 패스워드를 암호화하여 사용자 정보와 비교
+            if (passwordEncoder.matches(userPw, findUser.getUserPw())) {
+                // UsernamePasswordAuthenticationToken은 Spring Security에서
+                // 사용자의 이메일과 비밀번호를 이용하여 인증을 진행하기 위해 제공되는 클래스
+                // 이후에는 생성된 authentication 객체를 AuthenticationManager를 이용하여 인증을 진행합니다.
+                // AuthenticationManager는 인증을 담당하는 Spring Security의 중요한 인터페이스로, 실제로 사용자의 인증 과정을 처리합니다.
+                // AuthenticationManager를 사용하여 사용자가 입력한 이메일과 비밀번호가 올바른지 검증하고,
+                // 인증에 성공하면 해당 사용자에 대한 Authentication 객체를 반환합니다. 인증에 실패하면 예외를 발생시킵니다.
+                // 인증은 토큰을 서버로 전달하고, 서버에서 해당 토큰을 검증하여 사용자를 인증하는 단계에서 이루어집니다.
+                Authentication authentication = new UsernamePasswordAuthenticationToken(userEmail, userPw);
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userEmail, userPw);
+                //  UsernamePasswordAuthenticationToken
+                //  [Principal=zxzz45@naver.com, Credentials=[PROTECTED], Authenticated=false, Details=null, Granted Authorities=[]]
+                // 여기서 Authenticated=false는 아직 정상임
+                // 이 시점에서는 아직 실제로 인증이 이루어지지 않았기 때문에 Authenticated 속성은 false로 설정
+                // 인증 과정은 AuthenticationManager와 AuthenticationProvider에서 이루어지며,
+                // 인증이 성공하면 Authentication 객체의 isAuthenticated() 속성이 true로 변경됩니다.
+                log.info("authentication in MemberService : " + authentication);
 
-            TokenDTO token = jwtProvider.createToken(authentication);
+                List<GrantedAuthority> authoritiesForUser = getAuthoritiesForUser(findUser);
 
-            //        // Login ID/PW를 기반으로 UsernamePasswordAuthenticationToken 생성
+//                TokenDTO token = jwtProvider.createToken(authentication, findUser.getUserType());
+                TokenDTO token = jwtProvider.createToken(authentication, authoritiesForUser);
+
+                token = TokenDTO.builder()
+                        .grantType(token.getGrantType())
+                        .accessToken(token.getAccessToken())
+                        .refreshToken(token.getRefreshToken())
+                        .userEmail(token.getUserEmail())
+                        .nickName(findUser.getNickName())
+                        .userId(findUser.getUserId())
+                        .accessTokenTime(token.getAccessTokenTime())
+                        .refreshTokenTime(token.getRefreshTokenTime())
+                        .userType(findUser.getUserType())
+                        .build();
 
 
-            token = TokenDTO.builder()
-                    .grantType(token.getGrantType())
-                    .accessToken(token.getAccessToken())
-                    .refreshToken(token.getRefreshToken())
-                    .userEmail(findUser.getUserEmail())
-                    .nickName(findUser.getNickName())
-                    .userId(findUser.getUserId())
-                    .build();
+                TokenEntity tokenEntity = TokenEntity.builder()
+                        .id(token.getId())
+                        .grantType(token.getGrantType())
+                        .accessToken(token.getAccessToken())
+                        .refreshToken(token.getRefreshToken())
+                        .userEmail(token.getUserEmail())
+                        .nickName(token.getNickName())
+                        .userId(token.getUserId())
+                        .accessTokenTime(token.getAccessTokenTime())
+                        .refreshTokenTime(token.getRefreshTokenTime())
+                        .userType(token.getUserType())
+                        .build();
 
 
-            TokenEntity tokenEntity = TokenEntity.builder()
-                    .id(token.getId())
-                    .grantType(token.getGrantType())
-                    .accessToken(token.getAccessToken())
-                    .refreshToken(token.getRefreshToken())
-                    .userEmail(token.getUserEmail())
-                    .nickName(token.getNickName())
-                    .userId(token.getUserId())
-                    .build();
+                log.info("token in MemberService : " + tokenEntity);
+                tokenRepository.save(tokenEntity);
 
-            log.info("token : " + tokenEntity);
-            tokenRepository.save(tokenEntity);
-            return new ResponseEntity<>(token, HttpStatus.OK);
+                HttpHeaders headers = new HttpHeaders();
+                // response header에 jwt token을 넣어줌
+                headers.add(JwtAuthenticationFilter.HEADER_AUTHORIZATION, "Bearer " + token);
+
+                return new ResponseEntity<>(token, headers, HttpStatus.OK);
+            }
         } else {
             return null;
         }
+        return null;
+    }
+
+    private List<GrantedAuthority> getAuthoritiesForUser(MemberEntity member) {
+        // 예시: 데이터베이스에서 사용자의 권한 정보를 조회하는 로직을 구현
+        // member 객체를 이용하여 데이터베이스에서 사용자의 권한 정보를 조회하는 예시로 대체합니다.
+        UserType role = member.getUserType();  // 사용자의 권한 정보를 가져오는 로직 (예시)
+
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" +role.name()));
+        log.info("role in MemberService : " + role.name());
+        log.info("authorities in MemberService : " + authorities);
+        return authorities;
     }
 
 
@@ -193,6 +197,11 @@ public class MemberService {
                 .userType(memberDTO.getUserType())
                 .provider(memberDTO.getProvider())
                 .providerId(memberDTO.getProviderId())
+                .address(AddressEntity.builder()
+                        .userAddr(memberDTO.getAddressDTO().getUserAddr())
+                        .userAddrDetail(memberDTO.getAddressDTO().getUserAddrDetail())
+                        .userAddrEtc(memberDTO.getAddressDTO().getUserAddrEtc())
+                        .build())
                 .build();
 
         memberRepository.save(member);
@@ -208,7 +217,7 @@ public class MemberService {
     // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성하는 메서드
     public ResponseEntity<TokenDTO> createToken(OAuth2User oAuth2User) {
         String userEmail = oAuth2User.getAttribute("email");
-        log.info("userEmail : " + userEmail);
+        log.info("userEmail in MemberService : " + userEmail);
 
         MemberEntity findMember = memberRepository.findByUserEmail(userEmail);
 
@@ -219,28 +228,15 @@ public class MemberService {
         // 첫 번째 인자 : username 사용자 아이디
         // 두 번째 인자 : 사용자의 비밀번호
         // 세 번째 인자 : 사용자의 권한 정보를 담은 컬렉션
-        UserDetails userDetails = new User(userEmail, "", authorities);
-        log.info("userDetails : " + userDetails);
+        UserDetails userDetails = new User(userEmail, null, authorities);
+        log.info("userDetails in MemberService : " + userDetails);
         TokenDTO token = jwtProvider.createToken2(userDetails);
-        log.info("token : " + token);
+        log.info("token in MemberService : " + token);
 
         return ResponseEntity.ok().body(token);
     }
 
-    private List<GrantedAuthority> getAuthoritiesForUser(MemberEntity member) {
 
-        MemberEntity byUserEmail = memberRepository.findByUserEmail(member.getUserEmail());
 
-        // 예시: 데이터베이스에서 사용자의 권한 정보를 조회하는 로직을 구현
-        // member 객체를 이용하여 데이터베이스에서 사용자의 권한 정보를 조회하는 예시로 대체합니다.
-        UserType role = member.getUserType();  // 사용자의 권한 정보를 가져오는 로직 (예시)
 
-        if(byUserEmail.equals(role)) {
-            List<GrantedAuthority> authorities = new ArrayList<>();
-            authorities.add(new SimpleGrantedAuthority(role.name()));
-            return authorities;
-        }
-        // 빈 권한 리턴
-        return Collections.emptyList();
-    }
 }

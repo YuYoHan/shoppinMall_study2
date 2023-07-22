@@ -1,5 +1,6 @@
 package com.example.project1.domain.member;
 
+import com.example.project1.domain.member.embedded.AddressDTO;
 import com.example.project1.entity.member.MemberEntity;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,8 +30,10 @@ public class MemberDTO {
     private String userPw;
     @NotNull(message = "유저타입은 필수입력입니다.")
     private UserType userType;
-    private String provider;
+    private String provider;        // 예) google
     private String providerId;
+
+    private AddressDTO addressDTO;
 
 
     @Builder
@@ -41,7 +44,8 @@ public class MemberDTO {
                      String userPw,
                      UserType userType,
                      String provider,
-                     String providerId) {
+                     String providerId,
+                     AddressDTO addressDTO) {
         this.userId = userId;
         this.userEmail = userEmail;
         this.userName = userName;
@@ -50,20 +54,33 @@ public class MemberDTO {
         this.userType = userType;
         this.provider = provider;
         this.providerId = providerId;
+        this.addressDTO = addressDTO;
     }
 
     public static MemberDTO toMemberDTO(Optional<MemberEntity> member) {
-        MemberDTO memberDTO = MemberDTO.builder()
-                .userId(member.get().getUserId())
-                .userEmail(member.get().getUserEmail())
-                .userName(member.get().getUserName())
-                .userPw(member.get().getUserPw())
-                .nickName(member.get().getNickName())
-                .userType(member.get().getUserType())
-                .provider(member.get().getProvider())
-                .providerId(member.get().getProviderId())
-                .build();
 
-        return memberDTO;
+        if (member.isEmpty()) {
+            return null;
+        } else {
+            MemberDTO memberDTO = MemberDTO.builder()
+                    .userId(member.get().getUserId())
+                    .userEmail(member.get().getUserEmail())
+                    .userName(member.get().getUserName())
+                    .userPw(member.get().getUserPw())
+                    .nickName(member.get().getNickName())
+                    .userType(member.get().getUserType())
+                    .provider(member.get().getProvider())
+                    .providerId(member.get().getProviderId())
+                    .addressDTO(AddressDTO.builder()
+                            .userAddr(member.get().getAddress().getUserAddr())
+                            .userAddrDetail(member.get().getAddress().getUserAddrDetail())
+                            .userAddrEtc(member.get().getAddress().getUserAddrEtc())
+                            .build())
+                    .build();
+
+            return memberDTO;
+        }
+
+
     }
 }
