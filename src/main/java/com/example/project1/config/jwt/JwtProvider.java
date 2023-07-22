@@ -222,8 +222,9 @@ public class JwtProvider {
         log.info("auth in JwtProvider : " + auth);
 
         // 클레임 권한 정보 가져오기
+        List<String> authorityStrings = (List<String>) claims.get(AUTHORITIES_KEY);
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get("auth").toString().split(","))
+                authorityStrings.stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
