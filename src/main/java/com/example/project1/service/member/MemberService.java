@@ -137,8 +137,9 @@ public class MemberService {
                 // 사용자에게 이미 토큰이 할당되어 있는지 확인합니다.
                 if (checkEmail != null) {
                     log.info("이미 발급한 토큰이 있습니다.");
-                    //  // 기존 토큰을 업데이트할 때 사용할 임시 객체로 TokenDTO token2를 생성합니다.
-                    TokenDTO token2 = TokenDTO.builder()
+                    // 발급한 토큰이 있을 때 id를 식별해서 수정한다.
+                    // id가 없으면 새로운 거로 인식해서 새로 저장된다.
+                     token = TokenDTO.builder()
                             .id(checkEmail.getId())
                             .grantType(token.getGrantType())
                             .accessToken(token.getAccessToken())
@@ -150,18 +151,18 @@ public class MemberService {
                             .refreshTokenTime(token.getRefreshTokenTime())
                             .userType(findUser.getUserType())
                             .build();
-                    // 기존 토큰을 업데이트할 때 사용할 임시 객체로 TokenEntity tokenEntity2를 생성합니다.
+
                     TokenEntity updateToken = TokenEntity.builder()
-                            .id(token2.getId())
-                            .grantType(token2.getGrantType())
-                            .accessToken(token2.getAccessToken())
-                            .refreshToken(token2.getRefreshToken())
-                            .userEmail(token2.getUserEmail())
-                            .nickName(token2.getNickName())
-                            .userId(token2.getUserId())
-                            .accessTokenTime(token2.getAccessTokenTime())
-                            .refreshTokenTime(token2.getRefreshTokenTime())
-                            .userType(token2.getUserType())
+                            .id(token.getId())
+                            .grantType(token.getGrantType())
+                            .accessToken(token.getAccessToken())
+                            .refreshToken(token.getRefreshToken())
+                            .userEmail(token.getUserEmail())
+                            .nickName(token.getNickName())
+                            .userId(token.getUserId())
+                            .accessTokenTime(token.getAccessTokenTime())
+                            .refreshTokenTime(token.getRefreshTokenTime())
+                            .userType(token.getUserType())
                             .build();
 
                     log.info("token in MemberService : " + updateToken);
@@ -227,8 +228,10 @@ public class MemberService {
 
         MemberEntity findUser = memberRepository.findByUserEmail(memberDTO.getUserEmail());
 
-        if(findUser != null) {
+        // 새로 가입
+        if(findUser == null) {
             findUser = MemberEntity.builder()
+                    .userEmail(memberDTO.getUserEmail())
                     .userPw(passwordEncoder.encode(memberDTO.getUserPw()))
                     .userType(memberDTO.getUserType())
                     .userName(memberDTO.getUserName())
@@ -243,8 +246,15 @@ public class MemberService {
             MemberDTO modifyUser = MemberDTO.toMemberDTO(Optional.of(findUser));
             return modifyUser;
         } else {
-            MemberEntity member = MemberEntity.builder()
-                    .userEmail(memberDTO.getUserEmail())
+            // 회원 수정
+            findUser = MemberEntity.builder()
+                    // id를 식별해서 수정
+                    // 이거 없으면 새로 저장하기 됨
+                    // findUser꺼를 쓰면 db에 입력된거를 사용하기 때문에
+                    // 클라이언트에서 userEmail을 전달하더라도 서버에서 기존 값으로 업데이트가 이루어질 것입니다.
+                    // 이렇게 하면 userEmail을 수정하지 못하게 할 수 있습니다.
+                    .userId(findUser.getUserId())
+                    .userEmail(findUser.getUserEmail())
                     .userPw(passwordEncoder.encode(memberDTO.getUserPw()))
                     .userName(memberDTO.getUserName())
                     .nickName(memberDTO.getNickName())
@@ -256,10 +266,10 @@ public class MemberService {
                             .build())
                     .build();
 
-            memberRepository.save(member);
+            memberRepository.save(findUser);
             // 제대로 DTO 값이 엔티티에 넣어졌는지 확인하기 위해서
             // 엔티티에 넣어주고 다시 DTO 객체로 바꿔서 리턴을 해줬습니다.
-            MemberDTO memberDto = MemberDTO.toMemberDTO(Optional.of(member));
+            MemberDTO memberDto = MemberDTO.toMemberDTO(Optional.of(findUser));
             log.info("memberDto : " + memberDto);
             return memberDto;
         }

@@ -63,7 +63,9 @@ public class JwtProvider {
         Map<String, Object> claims = new HashMap<>();
         claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
 
+        // claims in JwtProvider : {auth=[ROLE_USER]}
         log.info("claims in JwtProvider : " + claims);
+        // authentication.getName() in JwtProvider : zxzz45@naver.com
         log.info("authentication.getName() in JwtProvider : " + authentication.getName());
 
         long now = (new Date()).getTime();

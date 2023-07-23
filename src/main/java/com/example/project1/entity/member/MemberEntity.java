@@ -15,12 +15,13 @@ import javax.persistence.*;
 @ToString
 @NoArgsConstructor
 public class MemberEntity extends BaseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Column(name = "user_name", nullable = false)
-    private  String userName;
+    private String userName;
 
     @Column(name = "user_email", nullable = false, unique = true)
     private String userEmail;
@@ -43,14 +44,17 @@ public class MemberEntity extends BaseEntity {
     private AddressEntity address;
 
     @Builder
-    public MemberEntity(String userName,
-                        String userEmail,
-                        String userPw,
-                        String nickName,
-                        UserType userType,
-                        String provider,
-                        String providerId,
-                        AddressEntity address) {
+    public MemberEntity(
+            Long userId,
+            String userName,
+            String userEmail,
+            String userPw,
+            String nickName,
+            UserType userType,
+            String provider,
+            String providerId,
+            AddressEntity address) {
+        this.userId = userId;
         this.userName = userName;
         this.userEmail = userEmail;
         this.userPw = userPw;
