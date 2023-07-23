@@ -29,16 +29,19 @@ public class TokenDTO {
     private UserType userType;
 
     @Builder
-    public TokenDTO(String grantType,
-                    String accessToken,
-                    String refreshToken,
-                    String userEmail,
-                    String nickName,
-                    Long userId,
-                    Date accessTokenTime,
-                    Date refreshTokenTime,
-                    UserType userType
-                    ) {
+    public TokenDTO(
+            Long id,
+            String grantType,
+            String accessToken,
+            String refreshToken,
+            String userEmail,
+            String nickName,
+            Long userId,
+            Date accessTokenTime,
+            Date refreshTokenTime,
+            UserType userType
+    ) {
+        this.id = id;
         this.grantType = grantType;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;

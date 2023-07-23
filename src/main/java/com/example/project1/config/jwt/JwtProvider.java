@@ -63,11 +63,13 @@ public class JwtProvider {
         Map<String, Object> claims = new HashMap<>();
         claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
 
-        log.info("claims : " + claims);
-
+        log.info("claims in JwtProvider : " + claims);
+        log.info("authentication.getName() in JwtProvider : " + authentication.getName());
 
         long now = (new Date()).getTime();
         Date now2 = new Date();
+
+
 
         // AccessToken 생성
         Date accessTokenExpire = new Date(now + this.accessTokenTime);
@@ -88,6 +90,11 @@ public class JwtProvider {
                 // 서명 : 비밀값과 함께 해시값을 ES256 방식으로 암호화
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
+
+        Claims claims2 = Jwts.parser().setSigningKey(key).parseClaimsJws(accessToken).getBody();
+        String subject = claims2.getSubject();
+        log.debug("claims subject 확인 in JwtProvider : " + subject);
+
 
 
 //         Claims claim = Jwts.parserBuilder()
@@ -119,7 +126,7 @@ public class JwtProvider {
         log.info("refreshToken in JwtProvider : " + refreshToken);
         log.info("claim에서 refreshToken에 담긴 auth 확인 in JwtProvider : " + claims);
 
-        return TokenDTO.builder()
+        TokenDTO tokenDTO= TokenDTO.builder()
                 .grantType("Bearer ")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -129,6 +136,10 @@ public class JwtProvider {
                 // 이메일을 반환하도록 구성했으니 이메일이 반환됩니다.
                 .userEmail(authentication.getName())
                 .build();
+
+        log.info("tokenDTO in JwtProvider : " + tokenDTO);
+
+        return tokenDTO;
     }
 
     // 소셜 로그인 성공시 JWT 발급
@@ -163,12 +174,15 @@ public class JwtProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        return TokenDTO.builder()
+        TokenDTO tokenDTO = TokenDTO.builder()
                 .grantType("Bearer ")
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .userEmail(userDetails.getUsername())
                 .build();
+
+        log.info("tokenDTO in JwtProvider : " + tokenDTO);
+        return tokenDTO;
     }
 
     // accessToken 생성
@@ -197,12 +211,15 @@ public class JwtProvider {
 
 //        log.info("claim에서 accessToken에 담김 auth 확인 in JwtProvider : " + auth);
 
-        return TokenDTO.builder()
+        TokenDTO tokenDTO = TokenDTO.builder()
                 .grantType("Bearer ")
                 .accessToken(accessToken)
                 .userEmail(userEmail)
                 .accessTokenTime(accessTokenExpire)
                 .build();
+
+        log.info("tokenDTO in JwtProvider : " + tokenDTO);
+        return tokenDTO;
     }
 
 
@@ -219,19 +236,28 @@ public class JwtProvider {
         }
 
         Object auth = claims.get("auth");
+        // [ROLE_USER]
         log.info("auth in JwtProvider : " + auth);
 
         // 클레임 권한 정보 가져오기
-        List<String> authorityStrings = (List<String>) claims.get(AUTHORITIES_KEY);
+         List<String> authorityStrings = (List<String>) claims.get(AUTHORITIES_KEY);
+        // [ROLE_USER]
+        log.info("authorityStrings in JwtProvider : " + authorityStrings);
+
         Collection<? extends GrantedAuthority> authorities =
                 authorityStrings.stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        // UserDetails 객체를 만들어서 Authentication 리턴
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
+        // [ROLE_USER]
+        log.info("authorities in JwtProvider : " + authorities);
 
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        // UserDetails 객체를 만들어서 Authentication 리턴
+//        User principal = new User(claims.getSubject(), "", authorities);
+//        log.info("principal in JwtProvider : " + principal);
+        log.info("claims.getSubject() in JwtProvider : " + claims.getSubject());
+
+        return new UsernamePasswordAuthenticationToken(claims.getSubject(), token, authorities);
     }
 
     private Claims parseClaims(String token) {

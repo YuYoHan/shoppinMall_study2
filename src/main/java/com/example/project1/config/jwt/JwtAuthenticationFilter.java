@@ -13,6 +13,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URI;
 
 // 클라이언트 요청 시 JWT 인증을 하기 위해 설치하는 커스텀 필터로
 // UsernamePasswordAuthenticationFiler 이전에 실행된다.
@@ -60,9 +61,12 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         if(StringUtils.hasText(jwt) && jwtProvider.validateToken(jwt)){
             // 토큰이 유효할 경우 토큰에서 Authentication 객체를 가지고 와서 SecurityContext에 저장
             Authentication authentication = jwtProvider.getAuthentication(jwt);
+            // UsernamePasswordAuthenticationToken
+            // [Principal=null, Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_USER]]
+            log.info("authentication in JwtAuthenticationFilter : " + authentication);
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            log.info("Security Context에 '{}' 인증 정보를 저장했습니다., uri : {}",
-                    authentication.getName(), requestURI);
+
+            log.info("Security Context에 인증 정보를 저장했습니다. 정보 : {}",authentication.getName());
         } else {
             log.debug("유효한 JWT 토큰이 없습니다. uri : {}", requestURI);
         }
