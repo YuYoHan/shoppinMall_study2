@@ -61,7 +61,12 @@ public class JwtProvider {
 //                .collect(Collectors.joining(","));
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
+        claims.put(AUTHORITIES_KEY, authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
+        claims.put("sub", authentication.getName());
+
 
         // claims in JwtProvider : {auth=[ROLE_USER]}
         log.info("claims in JwtProvider : " + claims);
@@ -81,7 +86,6 @@ public class JwtProvider {
                 // JWT의 "sub" 클레임을 설정하는 메서드입니다.
                 // "sub" 클레임은 일반적으로 사용자를 식별하는 용도로 사용되며,
                 // 이메일과 같은 사용자의 고유한 식별자를 담고 있을 수 있습니다.
-                .setSubject(authentication.getName())
                 .setIssuedAt(now2)
                 // 클레임 id : 유저 ID
 //                .claim(AUTHORITIES_KEY, authorities)
@@ -95,14 +99,8 @@ public class JwtProvider {
 
         Claims claims2 = Jwts.parser().setSigningKey(key).parseClaimsJws(accessToken).getBody();
         String subject = claims2.getSubject();
-        log.debug("claims subject 확인 in JwtProvider : " + subject);
-
-
-
-//         Claims claim = Jwts.parserBuilder()
-//                .setSigningKey(key)
-//                        .build()
-//                                .parseClaimsJws(accessToken).getBody();
+        // claims subject 확인 in JwtProvider : zxzz45@naver.com
+        log.info("★claims subject 확인 in JwtProvider : " + subject);
 
 
         // accessToken in JwtProvider : eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ6eHp6NDVAbmF2ZXIuY2
@@ -116,14 +114,16 @@ public class JwtProvider {
         // RefreshToken 생성
         Date refreshTokenExpire = new Date(now + this.refreshTokenTime);
         String refreshToken = Jwts.builder()
-                .setSubject(authentication.getName())
                 .setClaims(claims)
                 .setIssuedAt(now2)
                 .setExpiration(refreshTokenExpire)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-
+        Claims claims3 = Jwts.parser().setSigningKey(key).parseClaimsJws(refreshToken).getBody();
+        String subject2 = claims3.getSubject();
+        // claims subject 확인 in JwtProvider : zxzz45@naver.com
+        log.info("★claims subject 확인 in JwtProvider : " + subject2);
 
         log.info("refreshToken in JwtProvider : " + refreshToken);
         log.info("claim에서 refreshToken에 담긴 auth 확인 in JwtProvider : " + claims);
@@ -153,7 +153,7 @@ public class JwtProvider {
         // claims.put("roles", userDetails.getAuthorities()) 코드는 사용자의 권한 정보를 클레임에 추가하는 것입니다.
         // 클레임에는 "roles"라는 키로 사용자의 권한 정보가 저장되며, 해당 권한 정보는 JWT의 페이로드 부분에 포함됩니다.
         Claims claims = Jwts.claims().setSubject(userDetails.getUsername());
-        claims.put("auth", userDetails.getAuthorities());
+        claims.put(AUTHORITIES_KEY, userDetails.getAuthorities());
 
         log.info("claims : " + claims);
 
@@ -197,19 +197,28 @@ public class JwtProvider {
         log.info("authorities : " + authorities);
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put(AUTHORITIES_KEY, authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()));
+        claims.put(AUTHORITIES_KEY, authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        // setSubject이다.
+        // 클레임에 subject를 넣는것
+        claims.put("sub", userEmail);
 
         log.info("claims : " + claims);
 
         String accessToken = Jwts.builder()
                 .setIssuedAt(now2)
-                .setSubject(userEmail)
-                .setExpiration(accessTokenExpire)
                 .setClaims(claims)
+                .setExpiration(accessTokenExpire)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
         log.info("accessToken in JwtProvider : " + accessToken);
+
+        Claims claims2 = Jwts.parser().setSigningKey(key).parseClaimsJws(accessToken).getBody();
+        String subject = claims2.getSubject();
+        // claims subject 확인 in JwtProvider : zxzz45@naver.com
+        log.info("★claims subject 확인 in JwtProvider : " + subject);
 
 //        log.info("claim에서 accessToken에 담김 auth 확인 in JwtProvider : " + auth);
 
