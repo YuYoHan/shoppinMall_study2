@@ -1,17 +1,16 @@
 package com.example.project1.controller.member;
-
 import com.example.project1.config.auth.PrincipalDetails;
+import com.example.project1.config.oauth2.PrincipalOauth2UserService;
 import com.example.project1.domain.jwt.TokenDTO;
 import com.example.project1.domain.member.MemberDTO;
-import com.example.project1.repository.member.MemberRepository;
 import com.example.project1.service.jwt.RefreshTokenService;
 import com.example.project1.service.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.validation.BindingResult;
@@ -28,6 +27,7 @@ public class MemberController {
 
     private final MemberService memberService;
     private final RefreshTokenService refreshTokenService;
+    private final PrincipalDetails principalDetails;
 
     // 회원 가입
     @PostMapping("/api/v1/users/")
@@ -96,20 +96,23 @@ public class MemberController {
     }
 
     // Oauth2 google로 JWT 발급
-    @GetMapping("/success-oauth")
-    public ResponseEntity<?> createTokenForGoogle(@AuthenticationPrincipal OAuth2User oAuth2User) {
+    @PostMapping("/success-oauth")
+    public ResponseEntity<?> createTokenForGoogle(@RequestBody MemberDTO memberDTO) {
+        try {
 
-        if(oAuth2User == null) {
-            log.info("받아올 정보가 없습니다 ㅠㅠ");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("정보가 없어....");
-        } else {
-            log.info("oauth2User 정보를 받아오자 : " + oAuth2User);
+            log.info("memberDTO : " + memberDTO);
 
-            // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성합니다.
-            ResponseEntity<TokenDTO> token = memberService.createToken(oAuth2User);
-            log.info("token : " + token);
+            if(memberDTO != null) {
+                // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성합니다.
+                ResponseEntity<TokenDTO> token = memberService.createToken(memberDTO);
+                log.info("token : " + token);
+                return ResponseEntity.ok().body(token);
+            } else {
+                return null;
+            }
 
-            return ResponseEntity.ok().body(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("정보가 없습니다.");
         }
     }
 

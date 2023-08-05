@@ -1,5 +1,6 @@
 package com.example.project1.entity.jwt;
 
+import com.example.project1.domain.jwt.TokenDTO;
 import com.example.project1.domain.member.UserType;
 import lombok.Builder;
 import lombok.Getter;
@@ -52,5 +53,22 @@ public class TokenEntity {
         this.accessTokenTime = accessTokenTime;
         this.refreshTokenTime = refreshTokenTime;
         this.userType = userType;
+    }
+
+    public static TokenEntity toTokenEntity(TokenDTO tokenDTO) {
+        TokenEntity tokenEntity = TokenEntity.builder()
+                .id(tokenDTO.getId())
+                .grantType(tokenDTO.getGrantType())
+                .accessToken(tokenDTO.getAccessToken())
+                .refreshToken(tokenDTO.getRefreshToken())
+                .userEmail(tokenDTO.getUserEmail())
+                .nickName(tokenDTO.getNickName())
+                .userId(tokenDTO.getUserId())
+                .accessTokenTime(tokenDTO.getAccessTokenTime())
+                .refreshTokenTime(tokenDTO.getRefreshTokenTime())
+                .userType(tokenDTO.getUserType())
+                .build();
+
+        return tokenEntity;
     }
 }

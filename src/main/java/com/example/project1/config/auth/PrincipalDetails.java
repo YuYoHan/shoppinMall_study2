@@ -6,21 +6,25 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+
+// PrincipalDetails 객체는 시큐리티 컨텍스트에 등록되어 사용자의 인증 및 권한 부여에 사용됩니다.
+
 @Setter
 @Getter
 @ToString
-@NoArgsConstructor
 @Slf4j
+@NoArgsConstructor
+@Component
 public class PrincipalDetails implements UserDetails, OAuth2User {
 
     // 일반 로그인 정보를 저장하기 위한 필드
@@ -73,12 +77,14 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     // 사용자 패스워드를 반환
     @Override
     public String getPassword() {
+        log.info("password : "+ member.getUserPw());
         return member.getUserPw();
     }
 
     // 사용자 이름 반환
     @Override
     public String getUsername() {
+        log.info("id : " + member.getUserEmail());
         return member.getUserEmail();
     }
 
@@ -116,6 +122,7 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     @Override
     public Map<String, Object> getAttributes() {
+        log.info("attributes : " + attributes);
         return attributes;
     }
 

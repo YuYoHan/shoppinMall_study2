@@ -5,15 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
-import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
 
 // 클라이언트 요청 시 JWT 인증을 하기 위해 설치하는 커스텀 필터로
 // UsernamePasswordAuthenticationFiler 이전에 실행된다.
@@ -33,17 +31,16 @@ import java.net.URI;
 
 @RequiredArgsConstructor
 @Slf4j
-public class JwtAuthenticationFilter extends GenericFilterBean {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public static final String HEADER_AUTHORIZATION = "Authorization";
     private final JwtProvider jwtProvider;
 
     // doFilter는 토큰의 인증정보를 SecurityContext에 저장하는 역할 수행
 
+
     @Override
-    public void doFilter(ServletRequest request,
-                         ServletResponse response,
-                         FilterChain chain) throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 
         // Request Header에서 JWT 토큰을 추출
@@ -53,25 +50,64 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         // eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ6eHp6NDVAbmF2ZXIuY29tIiwiaWF
         // 0IjoxNjg5OTQ0OTk0LCJhdXRoIjoiIiwiZXhwIjoxNjg5OTQ1MzU0fQ.qyR2bJMDmNb1iv
         // q6a4W55dGBmyFEzaENN1-F7qPlJKw
-        log.info("jwt : " + jwt);
+        log.info("jwt in JwtAuthenticationFilter : " + jwt);
         String requestURI = httpServletRequest.getRequestURI();
         // requestURI/api/v1/users/1
-        log.info("requestURI" + requestURI);
+        log.info("requestURI in JwtAuthenticationFilter : " + requestURI);
 
         if(StringUtils.hasText(jwt) && jwtProvider.validateToken(jwt)){
             // 토큰이 유효할 경우 토큰에서 Authentication 객체를 가지고 와서 SecurityContext에 저장
             Authentication authentication = jwtProvider.getAuthentication(jwt);
             // UsernamePasswordAuthenticationToken
-            // [Principal=null, Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_USER]]
+            // [Principal=org.springframework.security.core.userdetails.User
+            // [Username=zxzz45@naver.com, Password=[PROTECTED], Enabled=true, AccountNonExpired=true,
+            // credentialsNonExpired=true, AccountNonLocked=true, Granted Authorities=[ROLE_USER]],
+            // Credentials=[PROTECTED], Authenticated=true, Details=null,
+            // Granted Authorities=[ROLE_USER]]
             log.info("authentication in JwtAuthenticationFilter : " + authentication);
+            // Spring Security의 SecurityContextHolder를 사용하여 현재 인증 정보를 설정합니다.
+            // 이를 통해 현재 사용자가 인증된 상태로 처리됩니다.
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             log.info("Security Context에 인증 정보를 저장했습니다. 정보 : {}", authentication.getName());
         } else {
             log.debug("유효한 JWT 토큰이 없습니다. uri : {}", requestURI);
         }
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
     }
+
+//    @Override
+//    public void doFilter(ServletRequest request,
+//                         ServletResponse response,
+//                         FilterChain chain) throws IOException, ServletException {
+//        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
+//
+//        // Request Header에서 JWT 토큰을 추출
+//        //  요청 헤더에서 JWT 토큰을 추출하는 역할
+//        String jwt = resolveToken(httpServletRequest);
+//        //  jwt :
+//        // eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ6eHp6NDVAbmF2ZXIuY29tIiwiaWF
+//        // 0IjoxNjg5OTQ0OTk0LCJhdXRoIjoiIiwiZXhwIjoxNjg5OTQ1MzU0fQ.qyR2bJMDmNb1iv
+//        // q6a4W55dGBmyFEzaENN1-F7qPlJKw
+//        log.info("jwt in JwtAuthenticationFilter : " + jwt);
+//        String requestURI = httpServletRequest.getRequestURI();
+//        // requestURI/api/v1/users/1
+//        log.info("requestURI in JwtAuthenticationFilter : " + requestURI);
+//
+//        if(StringUtils.hasText(jwt) && jwtProvider.validateToken(jwt)){
+//            // 토큰이 유효할 경우 토큰에서 Authentication 객체를 가지고 와서 SecurityContext에 저장
+//            Authentication authentication = jwtProvider.getAuthentication(jwt);
+//            // UsernamePasswordAuthenticationToken
+//            // [Principal=null, Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_USER]]
+//            log.info("authentication in JwtAuthenticationFilter : " + authentication);
+//            SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//            log.info("Security Context에 인증 정보를 저장했습니다. 정보 : {}", authentication.getName());
+//        } else {
+//            log.debug("유효한 JWT 토큰이 없습니다. uri : {}", requestURI);
+//        }
+//        chain.doFilter(request, response);
+//    }
 
 
     // Request Header 에서 토큰 정보를 꺼내오기 위한 메소드
@@ -82,6 +118,8 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
 
         if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        } else if(StringUtils.hasText(bearerToken)){
+            return bearerToken;
         } else {
             return null;
         }

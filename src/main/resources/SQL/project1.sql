@@ -4,3 +4,4 @@ select * from member;
 select * from token;
 
 drop table token;
+drop table member;
