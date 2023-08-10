@@ -1,6 +1,5 @@
 package com.example.project1.config.jwt;
 
-import com.example.project1.config.auth.PrincipalDetails;
 import com.example.project1.domain.jwt.TokenDTO;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +12,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Service;
 
 import javax.xml.bind.DatatypeConverter;
 import java.security.Key;
@@ -98,7 +96,12 @@ public class JwtProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        Claims claims1 = Jwts.parser().setSigningKey(key).parseClaimsJws(accessToken).getBody();
+        Claims claims1 =
+                Jwts.parserBuilder()
+                        .setSigningKey(key)
+                        .build()
+                        .parseClaimsJws(accessToken)
+                        .getBody();
         String subject1 = claims1.getSubject();
         // claims subject 확인 in JwtProvider : zxzz45@naver.com
         log.info("★claims access subject 확인 in JwtProvider : " + subject1);
@@ -121,7 +124,12 @@ public class JwtProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        Claims claims2 = Jwts.parser().setSigningKey(key).parseClaimsJws(refreshToken).getBody();
+        Claims claims2 =
+                Jwts.parserBuilder()
+                        .setSigningKey(key)
+                        .build()
+                        .parseClaimsJws(refreshToken)
+                        .getBody();
         String subject2 = claims2.getSubject();
         // claims subject 확인 in JwtProvider : zxzz45@naver.com
         log.info("★claims refreshToken subject 확인 in JwtProvider : " + subject2);
@@ -146,17 +154,11 @@ public class JwtProvider {
     }
 
     // 소셜 로그인 성공시 JWT 발급
-    public TokenDTO createTokenForOAuth2(Authentication authentication, List<GrantedAuthority> authorities) {
-        //  UsernamePasswordAuthenticationToken
-        //  [Principal=zxzz45@naver.com, Credentials=[PROTECTED], Authenticated=false, Details=null, Granted Authorities=[]]
-        // 여기서 Authenticated=false는 아직 정상임
-        // 이 시점에서는 아직 실제로 인증이 이루어지지 않았기 때문에 Authenticated 속성은 false로 설정
-        // 인증 과정은 AuthenticationManager와 AuthenticationProvider에서 이루어지며,
-        // 인증이 성공하면 Authentication 객체의 isAuthenticated() 속성이 true로 변경됩니다.
-        log.info("authentication in JwtProvider : " + authentication);
+    public TokenDTO createTokenForOAuth2(String userEmail, List<GrantedAuthority> authorities) {
 
         // userType in JwtProvider : ROLE_USER
-        log.info("userType in JwtProvider : " + authorities);
+        log.info("userEmail in JwtProvider : " + userEmail);
+        log.info("authorities in JwtProvider : " + authorities);
 
         // 권한 가져오기
         //  authentication 객체에서 권한 정보(GrantedAuthority)를 가져와 문자열 형태로 변환한 후,
@@ -171,13 +173,13 @@ public class JwtProvider {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList()));
 
-        claims.put("sub", authentication.getName());
+        claims.put("sub", userEmail);
 
 
         // claims in JwtProvider : {auth=[ROLE_USER]}
         log.info("claims in JwtProvider : " + claims);
         // authentication.getName() in JwtProvider : zxzz45@naver.com
-        log.info("authentication.getName() in JwtProvider : " + authentication.getName());
+        log.info("claims.get(\"sub\") in JwtProvider : " + claims.get("sub"));
 
         long now = (new Date()).getTime();
         Date now2 = new Date();
@@ -203,7 +205,11 @@ public class JwtProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        Claims claims1 = Jwts.parser().setSigningKey(key).parseClaimsJws(accessToken).getBody();
+        Claims claims1 = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(accessToken)
+                .getBody();
         String subject1 = claims1.getSubject();
         // claims subject 확인 in JwtProvider : zxzz45@naver.com
         log.info("★claims access subject 확인 in JwtProvider : " + subject1);
@@ -226,7 +232,11 @@ public class JwtProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
-        Claims claims2 = Jwts.parser().setSigningKey(key).parseClaimsJws(refreshToken).getBody();
+        Claims claims2 = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(refreshToken)
+                .getBody();
         String subject2 = claims2.getSubject();
         // claims subject 확인 in JwtProvider : zxzz45@naver.com
         log.info("★claims refreshToken subject 확인 in JwtProvider : " + subject2);
@@ -242,7 +252,7 @@ public class JwtProvider {
                 .refreshTokenTime(refreshTokenExpire)
                 // principalDeatails에서 getUserName 메소드가 반환한 것을 담아준다.
                 // 이메일을 반환하도록 구성했으니 이메일이 반환됩니다.
-                .userEmail(authentication.getName())
+                .userEmail(userEmail)
                 .build();
 
         log.info("tokenDTO in JwtProvider : " + tokenDTO);
@@ -278,7 +288,12 @@ public class JwtProvider {
 
         log.info("accessToken in JwtProvider : " + accessToken);
 
-        Claims claims2 = Jwts.parser().setSigningKey(key).parseClaimsJws(accessToken).getBody();
+        Claims claims2 = Jwts.parserBuilder()
+                        .setSigningKey(key)
+                                .build()
+                                        .parseClaimsJws(accessToken)
+                                                .getBody();
+
         String subject = claims2.getSubject();
         // claims subject 확인 in JwtProvider : zxzz45@naver.com
         log.info("★claims subject 확인 in JwtProvider : " + subject);
@@ -328,10 +343,45 @@ public class JwtProvider {
         // [ROLE_USER]
         log.info("authorities in JwtProvider : " + authorities);
 
-        User principal = new User(claims.getSubject(), "", authorities);
-        log.info("claims.getSubject() in JwtProvider : " + claims.getSubject());
+        /*
+            UserDetails를 사용하는 이유는 다음과 같습니다:
+        *   1.  인증과 권한 정보 분리:
+                Spring Security에서는 인증(Authentication)과 권한(Authorization)을 분리하는 것이 중요합니다.
+                즉, 사용자의 인증 정보(아이디, 비밀번호 등)와 사용자의 권한 정보(역할, 권한)을 분리하여 관리하고 처리합니다.
+                UserDetails는 사용자의 인증 정보를 담고 있으며, GrantedAuthority 객체들을 통해 사용자의 권한 정보를 나타낼 수 있습니다.
 
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+            2.  유연성:
+                Spring Security는 다양한 인증 방식과 인증 제공자(Authentication Provider)를 지원합니다.
+                UserDetails를 사용함으로써 각각의 인증 방식에 따라 사용자 정보를 일반화하여 처리할 수 있습니다.
+                JWT 토큰을 사용하는 경우에도 UserDetails를 활용하면 일반적인 Spring Security의 흐름을 따르며,
+                JWT 토큰에 포함된 사용자 정보와 권한을 UserDetails 객체로 추상화하여 처리할 수 있습니다.
+        * */
+        // Spring Security의 일반적인 원칙을 따르고, 인증 정보를 효율적이고 안전하게 관리하기 위한 방법 중 하나
+
+        // PrincipalDetails 에 유저 정보가 있는데 밑의 작업을 하는 이유는 다음과 같다.
+        // Spring Security의 내부 동작 및 일관성 유지를 위해 필요한 작업입니다.
+        // PrincipalDetails 클래스는 UserDetails 인터페이스를 구현하여 사용자의 정보와 권한을 저장하는 역할을 하고 있습니다.
+        // 그리고 UsernamePasswordAuthenticationToken은 Spring Security에서 인증을 나타내는 객체이며,
+        // 인증된 사용자 정보와 해당 사용자의 권한 정보를 포함합니다.
+        // JWT를 사용하여 인증을 처리할 때에는 토큰 검증 과정에서 사용자의 권한 정보를 추출하여
+        // UsernamePasswordAuthenticationToken을 생성합니다.
+        // 하지만 토큰 검증을 통해 가져온 권한 정보는 SimpleGrantedAuthority 객체의 리스트 형태로 제공됩니다.
+        // 이 때, Spring Security가 기대하는 UserDetails 타입의 객체로 변환하여야 합니다.
+        // 요약하면, 토큰 검증을 통해 가져온 권한 정보를 UserDetails 타입으로 변환하여
+        // UsernamePasswordAuthenticationToken에 담아서 저장하는 것은 Spring Security의 일관성과 내부 동작을 따르는 방식입니다.
+        UserDetails userDetails = new User(claims.getSubject(), "", authorities);
+        log.info("claims.getSubject() in JwtProvider : " + claims.getSubject());
+        log.info("userDetails.getUsername()  in JwtProvider : " + userDetails.getUsername());
+        log.info("userDetails.getAuthorities() in JwtProvider : " + userDetails.getAuthorities());
+
+        // 일반 로그인 시 주로 이거로 인증처리해서 SecurityContext에 저장한다.
+        // Spring Security에서 인증을 나타내는 객체로 사용됩니다.
+        // 일반적인 경우, 사용자 이름과 비밀번호를 사용하여 인증을 처리하고 해당 사용자의 권한 정보를 포함
+        // 원래는 사용자 이름과 비밀번호를 사용하여 인증을 처리하고, 해당 사용자의 권한 정보를 포함합니다.
+        // 일반적으로 이 객체를 사용하여 사용자가 입력한 인증 정보를 처리하고,
+        // 인증이 성공하면 해당 사용자의 권한을 포함한 Authentication 객체가 생성되어 SecurityContext에 저장됩니다.
+        // 그러나 JWT를 사용하는 경우에는 비밀번호 대신에 JWT 토큰을 사용하여 인증을 처리합니다.
+        return new UsernamePasswordAuthenticationToken(userDetails, token, authorities);
     }
 
     private Claims parseClaims(String token) {
@@ -348,6 +398,7 @@ public class JwtProvider {
             return e.getClaims();
         }
     }
+
 
     // 토큰의 유효성 검증을 수행
     public boolean validateToken(String token) {

@@ -9,7 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Map;
 
 @RestController
 @Slf4j
@@ -95,24 +99,25 @@ public class MemberController {
         }
     }
 
-    // Oauth2 google로 JWT 발급
-    @PostMapping("/success-oauth")
-    public ResponseEntity<?> createTokenForGoogle(@RequestBody MemberDTO memberDTO) {
+    // Oauth2 로그인 시 JWT 발급
+    @PostMapping("/success-oauth-login")
+    public ResponseEntity<?> createTokenForOauth2(@RequestHeader("Authorization") String token,
+                                                  @RequestBody MemberDTO member) {
         try {
+            log.info("member : " + member);
 
-            log.info("memberDTO : " + memberDTO);
+            String accessToken = token;
+            log.info("accessToken : " + accessToken);
 
-            if(memberDTO != null) {
-                // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성합니다.
-                ResponseEntity<TokenDTO> token = memberService.createToken(memberDTO);
-                log.info("token : " + token);
-                return ResponseEntity.ok().body(token);
+            if(member != null) {
+                ResponseEntity<?> jwt = memberService.createToken(accessToken, member);
+                return ResponseEntity.ok().body(jwt);
             } else {
                 return null;
             }
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("정보가 없습니다.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
@@ -141,9 +146,15 @@ public class MemberController {
 
     // 회원정보 수정
     @PutMapping("/api/v1/users/")
-    public ResponseEntity<?> update(@RequestBody MemberDTO memberDTO) throws Exception{
+    public ResponseEntity<?> update(@RequestBody MemberDTO memberDTO,
+                                    @AuthenticationPrincipal UserDetails userDetails) throws Exception{
         try {
-            MemberDTO update = memberService.update(memberDTO);
+            // 검증과 유효성이 끝난 토큰을 SecurityContext 에 저장하면
+            // @AuthenticationPrincipal UserDetails userDetails 으로 받아오고 사용
+            // zxzz45@naver.com 이런식으로 된다.
+            String userEmail = userDetails.getUsername();
+            log.info("userEmail : " + userEmail);
+            MemberDTO update = memberService.update(memberDTO, userEmail);
             return ResponseEntity.ok().body(update);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("잘못된 요청");

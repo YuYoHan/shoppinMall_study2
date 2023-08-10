@@ -42,6 +42,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     // swagger
     implementation 'io.springfox:springfox-boot-starter:3.0.0'
+    // thymeleaf
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 }
 
 tasks.named('test') {

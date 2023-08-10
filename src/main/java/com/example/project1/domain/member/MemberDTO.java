@@ -57,24 +57,21 @@ public class MemberDTO {
         this.addressDTO = addressDTO;
     }
 
-    public static MemberDTO toMemberDTO(Optional<MemberEntity> member) {
+    public static MemberDTO toMemberDTO(MemberEntity member) {
 
-        if (member.isEmpty()) {
-            return null;
-        } else {
             MemberDTO memberDTO = MemberDTO.builder()
-                    .userId(member.get().getUserId())
-                    .userEmail(member.get().getUserEmail())
-                    .userName(member.get().getUserName())
-                    .userPw(member.get().getUserPw())
-                    .nickName(member.get().getNickName())
-                    .userType(member.get().getUserType())
-                    .provider(member.get().getProvider())
-                    .providerId(member.get().getProviderId())
+                    .userId(member.getUserId())
+                    .userEmail(member.getUserEmail())
+                    .userName(member.getUserName())
+                    .userPw(member.getUserPw())
+                    .nickName(member.getNickName())
+                    .userType(member.getUserType())
+                    .provider(member.getProvider())
+                    .providerId(member.getProviderId())
                     .addressDTO(AddressDTO.builder()
-                            .userAddr(member.get().getAddress().getUserAddr())
-                            .userAddrDetail(member.get().getAddress().getUserAddrDetail())
-                            .userAddrEtc(member.get().getAddress().getUserAddrEtc())
+                            .userAddr(member.getAddress().getUserAddr())
+                            .userAddrDetail(member.getAddress().getUserAddrDetail())
+                            .userAddrEtc(member.getAddress().getUserAddrEtc())
                             .build())
                     .build();
 
@@ -83,4 +80,3 @@ public class MemberDTO {
 
 
     }
-}

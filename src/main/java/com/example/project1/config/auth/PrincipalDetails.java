@@ -17,7 +17,8 @@ import java.util.Collection;
 import java.util.Map;
 
 
-// PrincipalDetails 객체는 시큐리티 컨텍스트에 등록되어 사용자의 인증 및 권한 부여에 사용됩니다.
+// PrincipalDetails 클래스는 UserDetails 인터페이스를 구현하여 사용자의 정보와 권한을 저장하는 역할을 하고 있습니다.
+// 여기서 JwtProvider 에 정보를 줘서 토큰을 생성하게 한다.
 
 @Setter
 @Getter

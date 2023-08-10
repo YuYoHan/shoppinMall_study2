@@ -27,6 +27,7 @@ public class TokenDTO {
     private Date accessTokenTime;
     private Date refreshTokenTime;
     private UserType userType;
+    private String providerId;
 
     @Builder
     public TokenDTO(
@@ -39,7 +40,8 @@ public class TokenDTO {
             Long userId,
             Date accessTokenTime,
             Date refreshTokenTime,
-            UserType userType
+            UserType userType,
+            String providerId
     ) {
         this.id = id;
         this.grantType = grantType;
@@ -51,6 +53,7 @@ public class TokenDTO {
         this.accessTokenTime = accessTokenTime;
         this.refreshTokenTime = refreshTokenTime;
         this.userType = userType;
+        this.providerId = providerId;
     }
 
 }

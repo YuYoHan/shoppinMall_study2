@@ -12,6 +12,8 @@ import com.example.project1.entity.member.MemberEntity;
 import com.example.project1.entity.member.embedded.AddressEntity;
 import com.example.project1.repository.jwt.TokenRepository;
 import com.example.project1.repository.member.MemberRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -21,9 +23,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.*;
 
 @Service
@@ -78,8 +83,9 @@ public class MemberService {
 
     // 아이디 조회
     public MemberDTO search(Long userId) {
-        Optional<MemberEntity> searchId = memberRepository.findById(userId);
-        MemberDTO memberDTO = MemberDTO.toMemberDTO(searchId);
+        MemberEntity member = memberRepository.findById(userId)
+                .orElseThrow(EntityNotFoundException::new);
+        MemberDTO memberDTO = MemberDTO.toMemberDTO(member);
         return memberDTO;
     }
 
@@ -107,10 +113,14 @@ public class MemberService {
                 // UsernamePasswordAuthenticationToken은 Spring Security에서
                 // 사용자의 이메일과 비밀번호를 이용하여 인증을 진행하기 위해 제공되는 클래스
                 // 이후에는 생성된 authentication 객체를 AuthenticationManager를 이용하여 인증을 진행합니다.
-                // AuthenticationManager는 인증을 담당하는 Spring Security의 중요한 인터페이스로, 실제로 사용자의 인증 과정을 처리합니다.
+                // AuthenticationManager는 인증을 담당하는 Spring Security 의 중요한 인터페이스로, 실제로 사용자의 인증 과정을 처리합니다.
                 // AuthenticationManager를 사용하여 사용자가 입력한 이메일과 비밀번호가 올바른지 검증하고,
                 // 인증에 성공하면 해당 사용자에 대한 Authentication 객체를 반환합니다. 인증에 실패하면 예외를 발생시킵니다.
                 // 인증은 토큰을 서버로 전달하고, 서버에서 해당 토큰을 검증하여 사용자를 인증하는 단계에서 이루어집니다.
+                // 즉, Authentication 객체를 생성하고, 해당 객체를 SecurityContext에 저장하게 되면,
+                // 인증이 완료되지 않은 상태에서 사용자 정보를 가지는 인증 객체가 저장됩니다.
+                // 이후 검증 시에는 해당 인증 객체를 기반으로 다시 UsernamePasswordAuthenticationToken을 생성하여
+                // 인증 상태를 true로 설정하는 것이 가능합니다.
                 Authentication authentication = new UsernamePasswordAuthenticationToken(userEmail, userPw);
 
                 //  UsernamePasswordAuthenticationToken
@@ -150,8 +160,6 @@ public class MemberService {
                             .build();
 
                     TokenEntity updateToken = TokenEntity.toTokenEntity(token);
-
-
                     log.info("token in MemberService : " + updateToken);
                     tokenRepository.save(updateToken);
                 } else {
@@ -168,10 +176,8 @@ public class MemberService {
                             .userType(findUser.getUserType())
                             .build();
 
-
                     // 새로운 토큰을 DB에 저장할 때 사용할 임시 객체로 TokenEntity tokenEntity를 생성합니다.
                     TokenEntity newToken = TokenEntity.toTokenEntity(token);
-
                     log.info("token in MemberService : " + newToken);
                     tokenRepository.save(newToken);
                 }
@@ -201,9 +207,15 @@ public class MemberService {
 
 
     // 회원정보 수정
-    public MemberDTO update(MemberDTO memberDTO) {
+    public MemberDTO update(MemberDTO memberDTO, String userEmail) {
 
-        MemberEntity findUser = memberRepository.findByUserEmail(memberDTO.getUserEmail());
+        // SecurityContext 에서 찾아온 유저이메일로 DB 조회
+        MemberEntity findUser = memberRepository.findByUserEmail(userEmail);
+        // findUser : MemberEntity(userId=3, userName=tester, userEmail=zxzz45@naver.com,
+        // userPw={bcrypt}$2a$10$awW/iOrOTzbDSQU2MnS8Hu.c1T/oNgmEG6/z6wMI1JKUw3BpXKXtm,
+        // nickName=test, userType=USER, provider=null,
+        // providerId=null, address=AddressEntity(userAddr=서울시 강남구, userAddrDetail=160-41, userAddrEtc=3층))
+        log.info("findUser : " + findUser);
 
         // 새로 가입
         if (findUser == null) {
@@ -220,7 +232,8 @@ public class MemberService {
                             .build()).build();
 
             memberRepository.save(findUser);
-            MemberDTO modifyUser = MemberDTO.toMemberDTO(Optional.of(findUser));
+            MemberDTO modifyUser = MemberDTO.toMemberDTO(findUser);
+            log.info("modifyUser : " + modifyUser);
             return modifyUser;
         } else {
             // 회원 수정
@@ -246,7 +259,7 @@ public class MemberService {
             memberRepository.save(findUser);
             // 제대로 DTO 값이 엔티티에 넣어졌는지 확인하기 위해서
             // 엔티티에 넣어주고 다시 DTO 객체로 바꿔서 리턴을 해줬습니다.
-            MemberDTO memberDto = MemberDTO.toMemberDTO(Optional.of(findUser));
+            MemberDTO memberDto = MemberDTO.toMemberDTO(findUser);
             log.info("memberDto : " + memberDto);
             return memberDto;
         }
@@ -254,48 +267,78 @@ public class MemberService {
 
     // 소셜 로그인 성공시 jwt 반환
     // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성하는 메서드
-    public ResponseEntity<TokenDTO> createToken(MemberDTO memberDTO) {
+    public ResponseEntity<?> createToken(String accessToken, MemberDTO member) {
 
-        String email = memberDTO.getUserEmail();
-        String nickName = memberDTO.getNickName();
+        Claims claims = Jwts.parserBuilder()
+                .build()
+                .parseClaimsJws(accessToken)
+                .getBody();
 
-        MemberEntity findEmail = memberRepository.findByUserEmail(email);
-        log.info("findEmail in MemberService : " + findEmail);
+        String userEmail = claims.getSubject();
+        log.info("userEmail : " + userEmail);
 
-        // 기존의 멤버 엔티티 수정
-        findEmail = MemberEntity.builder()
-                .userId(findEmail.getUserId())
-                .nickName(nickName)
-                .address(AddressEntity.builder()
-                        .userAddr(memberDTO.getAddressDTO().getUserAddr())
-                        .userAddrEtc(memberDTO.getAddressDTO().getUserAddrEtc())
-                        .userAddrDetail(memberDTO.getAddressDTO().getUserAddrDetail())
-                        .build())
-                .build();
+        MemberEntity findEmail = memberRepository.findByUserEmail(userEmail);
 
-        memberRepository.save(findEmail);
 
-        if(!(findEmail.getProvider().isEmpty()) && !(findEmail.getProviderId().isEmpty())) {
-            TokenEntity findToken = tokenRepository.findByUserEmail(findEmail.getUserEmail());
-            log.info("findToken in MemberService : " + findToken);
-            if (findToken != null) {
-                TokenDTO tokenDTO = TokenDTO.builder()
-                        .id(findToken.getId())
-                        .grantType(findToken.getGrantType())
-                        .accessToken(findToken.getAccessToken())
-                        .accessTokenTime(findToken.getAccessTokenTime())
-                        .refreshToken(findToken.getRefreshToken())
-                        .refreshTokenTime(findToken.getRefreshTokenTime())
-                        .userEmail(findToken.getUserEmail())
-                        .nickName(nickName)
-                        .build();
-
-                return ResponseEntity.ok().body(tokenDTO);
+        if(findEmail.getProviderId() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("providerId가 없습니다. 소셜 로그인이 아니거나 누락됐습니다.");
         } else {
-                return null;
-            }
-        } else {
-            return ResponseEntity.notFound().build();
+            findEmail = MemberEntity.builder()
+                    .userId(findEmail.getUserId())
+                    .userEmail(findEmail.getUserEmail())
+                    .userPw(findEmail.getUserPw())
+                    .userName(findEmail.getUserName())
+                    .nickName(member.getNickName())
+                    .userType(findEmail.getUserType())
+                    .provider(findEmail.getProvider())
+                    .providerId(findEmail.getProviderId())
+                    .address(AddressEntity.builder()
+                            .userAddr(member.getAddressDTO().getUserAddr())
+                            .userAddrDetail(member.getAddressDTO().getUserAddrDetail())
+                            .userAddrEtc(member.getAddressDTO().getUserAddrEtc())
+                            .build())
+                    .build();
+            MemberEntity save = memberRepository.save(findEmail);
+            log.info("save : " + save);
         }
+
+        List<GrantedAuthority> authoritiesForUser = getAuthoritiesForUser(findEmail);
+        TokenEntity findToken = tokenRepository.findByUserEmail(findEmail.getUserEmail());
+
+        TokenDTO token = jwtProvider.createTokenForOAuth2(userEmail, authoritiesForUser);
+        if(findToken == null) {
+            token = TokenDTO.builder()
+                    .grantType(token.getGrantType())
+                    .accessToken(token.getAccessToken())
+                    .accessTokenTime(token.getRefreshTokenTime())
+                    .refreshToken(token.getRefreshToken())
+                    .refreshTokenTime(token.getAccessTokenTime())
+                    .userEmail(token.getUserEmail())
+                    .providerId(findEmail.getProviderId())
+                    .userType(findEmail.getUserType())
+                    .nickName(member.getNickName())
+                    .userId(findEmail.getUserId())
+                    .build();
+
+            log.info("token in MemberService : " + token);
+        } else {
+            token = TokenDTO.builder()
+                    .id(findToken.getId())
+                    .grantType(token.getGrantType())
+                    .accessToken(token.getAccessToken())
+                    .accessTokenTime(token.getRefreshTokenTime())
+                    .refreshToken(token.getRefreshToken())
+                    .refreshTokenTime(token.getAccessTokenTime())
+                    .userEmail(token.getUserEmail())
+                    .providerId(findEmail.getProviderId())
+                    .userType(findEmail.getUserType())
+                    .nickName(member.getNickName())
+                    .userId(findEmail.getUserId())
+                    .build();
+        }
+        TokenEntity tokenEntity = TokenEntity.toTokenEntity(token);
+        log.info("tokenEntity : " + tokenEntity);
+        tokenRepository.save(tokenEntity);
+        return ResponseEntity.ok().body(token);
     }
 }

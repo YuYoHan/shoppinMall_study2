@@ -6,6 +6,9 @@
 </head>
 <body>
 <form id="memberForm">
+  <label for="userEmail">이메일:</label>
+  <input type="text" id="userEmail" name="userEmail" required>
+
   <label for="nickName">별명:</label>
   <input type="text" id="nickName" name="nickName" required>
 
@@ -23,6 +26,7 @@
 <script>
   function submitForm() {
     // 입력된 값을 가져옵니다.
+    const userEmail = document.getElementById('userEmail').value;
     const nickName = document.getElementById('nickName').value;
     const userAddr = document.getElementById('userAddr').value;
     const userAddrDetail = document.getElementById('userAddrDetail').value;
@@ -37,6 +41,7 @@
 
     // 멤버 관련 정보를 JSON으로 묶습니다.
     const memberDTO = {
+      userEmail : userEmail,
       nickName: nickName,
       addressDTO: addressDTO,
     };
