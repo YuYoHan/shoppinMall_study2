@@ -29,7 +29,6 @@ public class TokenEntity {
     private Date accessTokenTime;
     private Date refreshTokenTime;
     private UserType userType;
-    private String providerId;
 
 
     @Builder
@@ -42,8 +41,7 @@ public class TokenEntity {
                        Long userId,
                        Date accessTokenTime,
                        Date refreshTokenTime,
-                       UserType userType,
-                       String providerId
+                       UserType userType
                        ) {
         this.id = id;
         this.grantType = grantType;
@@ -55,7 +53,6 @@ public class TokenEntity {
         this.accessTokenTime = accessTokenTime;
         this.refreshTokenTime = refreshTokenTime;
         this.userType = userType;
-        this.providerId = providerId;
     }
 
     public static TokenEntity toTokenEntity(TokenDTO tokenDTO) {
@@ -70,7 +67,6 @@ public class TokenEntity {
                 .accessTokenTime(tokenDTO.getAccessTokenTime())
                 .refreshTokenTime(tokenDTO.getRefreshTokenTime())
                 .userType(tokenDTO.getUserType())
-                .providerId(tokenDTO.getProviderId())
                 .build();
 
         return tokenEntity;

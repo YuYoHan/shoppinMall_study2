@@ -44,6 +44,7 @@ dependencies {
     implementation 'io.springfox:springfox-boot-starter:3.0.0'
     // thymeleaf
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation group: 'com.google.api-client', name: 'google-api-client-jackson2', version: '1.30.10'
 }
 
 tasks.named('test') {

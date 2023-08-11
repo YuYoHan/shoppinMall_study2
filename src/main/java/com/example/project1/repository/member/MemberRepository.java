@@ -12,4 +12,5 @@ public interface MemberRepository extends JpaRepository<MemberEntity, Long> {
     // select * from user where username = 1?
     MemberEntity findByUserEmail(String userEmail);
     MemberEntity deleteByUserId(Long userId);
+    MemberEntity findByProviderId(String providerId);
 }

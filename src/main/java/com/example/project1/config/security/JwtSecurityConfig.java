@@ -2,7 +2,6 @@ package com.example.project1.config.security;
 
 import com.example.project1.config.jwt.JwtAuthenticationFilter;
 import com.example.project1.config.jwt.JwtProvider;
-import com.example.project1.config.oauth2.validate.GoogleConfig;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,7 +12,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class JwtSecurityConfig extends SecurityConfigurerAdapter<DefaultSecurityFilterChain, HttpSecurity> {
 
     private final JwtProvider jwtProvider;
-    private final GoogleConfig googleConfig;
 
 
     // JwtAuthenticationFilter 가 일반 로그인에 대한 토큰 검증을 처리하고,
@@ -21,7 +19,8 @@ public class JwtSecurityConfig extends SecurityConfigurerAdapter<DefaultSecurity
     @Override
     public void configure(HttpSecurity http) throws Exception {
         // JwtAuthenticationFilter가 일반 로그인에 대한 토큰 검증을 처리
-        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(jwtProvider, googleConfig);
+        JwtAuthenticationFilter jwtAuthenticationFilter =
+                new JwtAuthenticationFilter(jwtProvider);
 
         http
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

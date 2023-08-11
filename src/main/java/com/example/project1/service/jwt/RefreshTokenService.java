@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -47,24 +45,19 @@ public class RefreshTokenService {
             TokenDTO accessToken = jwtProvider.createAccessToken(userEmail, authoritiesForUser);
             log.info("accessToken : " + accessToken);
 
-
             accessToken = TokenDTO.builder()
+                    .id(findRefreshTokenEmail.getId())
                     .grantType(accessToken.getGrantType())
                     .accessToken(accessToken.getAccessToken())
+                    .refreshToken(findRefreshTokenEmail.getRefreshToken())
+                    .refreshTokenTime(findRefreshTokenEmail.getRefreshTokenTime())
                     .userEmail(accessToken.getUserEmail())
                     .nickName(member.getNickName())
                     .userId(member.getUserId())
                     .accessTokenTime(accessToken.getAccessTokenTime())
                     .build();
 
-            TokenEntity tokenEntity = TokenEntity.builder()
-                    .grantType(accessToken.getGrantType())
-                    .accessToken(accessToken.getAccessToken())
-                    .userEmail(accessToken.getUserEmail())
-                    .nickName(accessToken.getNickName())
-                    .userId(accessToken.getUserId())
-                    .accessTokenTime(accessToken.getAccessTokenTime())
-                    .build();
+            TokenEntity tokenEntity = TokenEntity.toTokenEntity(accessToken);
 
             log.info("token : " + tokenEntity);
             tokenRepository.save(tokenEntity);

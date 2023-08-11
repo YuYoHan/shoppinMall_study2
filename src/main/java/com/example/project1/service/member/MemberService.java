@@ -267,78 +267,35 @@ public class MemberService {
 
     // 소셜 로그인 성공시 jwt 반환
     // OAuth2User에서 필요한 정보를 추출하여 UserDetails 객체를 생성하는 메서드
-    public ResponseEntity<?> createToken(String accessToken, MemberDTO member) {
+    public ResponseEntity<?> createToken(String userEmail) {
 
-        Claims claims = Jwts.parserBuilder()
-                .build()
-                .parseClaimsJws(accessToken)
-                .getBody();
-
-        String userEmail = claims.getSubject();
-        log.info("userEmail : " + userEmail);
+        log.info("userEmail in MemberService : " + userEmail);
 
         MemberEntity findEmail = memberRepository.findByUserEmail(userEmail);
-
-
-        if(findEmail.getProviderId() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("providerId가 없습니다. 소셜 로그인이 아니거나 누락됐습니다.");
-        } else {
-            findEmail = MemberEntity.builder()
-                    .userId(findEmail.getUserId())
-                    .userEmail(findEmail.getUserEmail())
-                    .userPw(findEmail.getUserPw())
-                    .userName(findEmail.getUserName())
-                    .nickName(member.getNickName())
-                    .userType(findEmail.getUserType())
-                    .provider(findEmail.getProvider())
-                    .providerId(findEmail.getProviderId())
-                    .address(AddressEntity.builder()
-                            .userAddr(member.getAddressDTO().getUserAddr())
-                            .userAddrDetail(member.getAddressDTO().getUserAddrDetail())
-                            .userAddrEtc(member.getAddressDTO().getUserAddrEtc())
-                            .build())
-                    .build();
-            MemberEntity save = memberRepository.save(findEmail);
-            log.info("save : " + save);
-        }
+        log.info("findUser in MemberService : " + findEmail);
 
         List<GrantedAuthority> authoritiesForUser = getAuthoritiesForUser(findEmail);
         TokenEntity findToken = tokenRepository.findByUserEmail(findEmail.getUserEmail());
+        log.info("findUser in MemberService : " + findToken);
 
-        TokenDTO token = jwtProvider.createTokenForOAuth2(userEmail, authoritiesForUser);
-        if(findToken == null) {
-            token = TokenDTO.builder()
-                    .grantType(token.getGrantType())
-                    .accessToken(token.getAccessToken())
-                    .accessTokenTime(token.getRefreshTokenTime())
-                    .refreshToken(token.getRefreshToken())
-                    .refreshTokenTime(token.getAccessTokenTime())
-                    .userEmail(token.getUserEmail())
-                    .providerId(findEmail.getProviderId())
-                    .userType(findEmail.getUserType())
-                    .nickName(member.getNickName())
-                    .userId(findEmail.getUserId())
-                    .build();
-
-            log.info("token in MemberService : " + token);
-        } else {
-            token = TokenDTO.builder()
+        // PrincipalOauth2UserService 에서 만든 토큰이 있으면 true
+        if(findToken != null) {
+            TokenDTO token = TokenDTO.builder()
                     .id(findToken.getId())
-                    .grantType(token.getGrantType())
-                    .accessToken(token.getAccessToken())
-                    .accessTokenTime(token.getRefreshTokenTime())
-                    .refreshToken(token.getRefreshToken())
-                    .refreshTokenTime(token.getAccessTokenTime())
-                    .userEmail(token.getUserEmail())
-                    .providerId(findEmail.getProviderId())
-                    .userType(findEmail.getUserType())
-                    .nickName(member.getNickName())
-                    .userId(findEmail.getUserId())
+                    .grantType(findToken.getGrantType())
+                    .accessToken(findToken.getAccessToken())
+                    .accessTokenTime(findToken.getRefreshTokenTime())
+                    .refreshToken(findToken.getRefreshToken())
+                    .refreshTokenTime(findToken.getAccessTokenTime())
+                    .userEmail(findToken.getUserEmail())
+                    .userType(findToken.getUserType())
+                    .nickName(findToken.getNickName())
+                    .userId(findToken.getUserId())
                     .build();
+
+            return ResponseEntity.ok().body(token);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("토큰이 가입되지 않았습니다. 소셜 로그인에 문제가 있습니다.");
         }
-        TokenEntity tokenEntity = TokenEntity.toTokenEntity(token);
-        log.info("tokenEntity : " + tokenEntity);
-        tokenRepository.save(tokenEntity);
-        return ResponseEntity.ok().body(token);
     }
 }

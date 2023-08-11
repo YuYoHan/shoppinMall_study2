@@ -1,6 +1,5 @@
 package com.example.project1.config.jwt;
 
-import com.example.project1.config.oauth2.validate.GoogleConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -36,8 +35,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public static final String HEADER_AUTHORIZATION = "Authorization";
     private final JwtProvider jwtProvider;
-    private static final String GOOGLE_ISSUER = "https://accounts.google.com";
-    private final GoogleConfig googleConfig;
 
     // doFilter는 토큰의 인증정보를 SecurityContext에 저장하는 역할 수행
     @Override
@@ -89,7 +86,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } else {
             log.debug("유효한 JWT 토큰이 없습니다. uri : {}", requestURI);
         }
-
         filterChain.doFilter(request, response);
     }
 

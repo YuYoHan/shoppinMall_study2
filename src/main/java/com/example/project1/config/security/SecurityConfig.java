@@ -4,11 +4,10 @@ import com.example.project1.config.jwt.JwtAccessDeniedHandler;
 import com.example.project1.config.jwt.JwtAuthenticationEntryPoint;
 import com.example.project1.config.jwt.JwtProvider;
 import com.example.project1.config.oauth2.PrincipalOauth2UserService;
-import com.example.project1.config.oauth2.validate.GoogleConfig;
+import com.example.project1.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,7 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +27,6 @@ import java.util.Map;
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
-    private final GoogleConfig googleConfig;
     private final PrincipalOauth2UserService principalOauth2UserService;
 
     @Bean
@@ -65,7 +62,7 @@ public class SecurityConfig {
                 // 이 Filter를 어느위치에서 사용하겠다고 등록을 해주어야 Filter가 작동이 됩니다.
                 // security 로직에 JwtFilter 등록
                 // .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class)
-                .apply(new JwtSecurityConfig(jwtProvider, googleConfig));
+                .apply(new JwtSecurityConfig(jwtProvider));
 
         // 에러 방지
         http

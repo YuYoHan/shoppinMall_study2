@@ -101,16 +101,16 @@ public class MemberController {
 
     // Oauth2 로그인 시 JWT 발급
     @PostMapping("/success-oauth-login")
-    public ResponseEntity<?> createTokenForOauth2(@RequestHeader("Authorization") String token,
-                                                  @RequestBody MemberDTO member) {
+    public ResponseEntity<?> createTokenForOauth2(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            log.info("member : " + member);
+            log.info("userDetails : " + userDetails);
 
-            String accessToken = token;
-            log.info("accessToken : " + accessToken);
+            String userEmail = userDetails.getUsername();
 
-            if(member != null) {
-                ResponseEntity<?> jwt = memberService.createToken(accessToken, member);
+            log.info(" userEmail : " + userEmail);
+
+            if(userEmail != null) {
+                ResponseEntity<?> jwt = memberService.createToken(userEmail);
                 return ResponseEntity.ok().body(jwt);
             } else {
                 return null;
@@ -120,18 +120,6 @@ public class MemberController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
-
-
-
-    // Oauth2 naver로 JWT 발급
-//    @GetMapping("/oauth2/authorization/naver")
-//    public ResponseEntity<?> createTokenForNaver() {
-//
-//
-//
-//        ResponseEntity<TokenDTO> token = memberService.createToken(oAuth2User);
-//        return ResponseEntity.ok().body(token);
-//    }
 
 
     // 로그아웃

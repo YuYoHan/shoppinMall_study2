@@ -154,10 +154,11 @@ public class JwtProvider {
     }
 
     // 소셜 로그인 성공시 JWT 발급
-    public TokenDTO createTokenForOAuth2(String userEmail, List<GrantedAuthority> authorities) {
+    public TokenDTO createTokenForOAuth2(String userEmail,
+                                         List<GrantedAuthority> authorities) {
 
         // userType in JwtProvider : ROLE_USER
-        log.info("userEmail in JwtProvider : " + userEmail);
+        log.info("userEmail in JwtProvider : " +userEmail);
         log.info("authorities in JwtProvider : " + authorities);
 
         // 권한 가져오기
@@ -183,8 +184,6 @@ public class JwtProvider {
 
         long now = (new Date()).getTime();
         Date now2 = new Date();
-
-
 
         // AccessToken 생성
         Date accessTokenExpire = new Date(now + this.accessTokenTime);
