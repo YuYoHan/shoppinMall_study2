@@ -14,7 +14,7 @@ import com.example.project1.repository.jwt.TokenRepository;
 import com.example.project1.repository.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -79,8 +79,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
         // 사용자의 소셜 서비스(provider)에서 발급된 고유한 식별자를 가져옵니다.
         // 이 값은 해당 소셜 서비스에서 유니크한 사용자를 식별하는 용도로 사용됩니다.
         String providerId = oAuth2UserInfo.getProviderId();
-        // 예) google_109742856182916427686
-        String userName = provider + "_" + providerId;
+        String userName = oAuth2UserInfo.getName();
         String password = bCryptPasswordEncoder.encode("get");
         // 사용자의 이메일 주소를 가져옵니다. 소셜 서비스에서 제공하는 이메일 정보를 사용합니다.
         String email = oAuth2UserInfo.getEmail();
@@ -111,6 +110,7 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
                     .userType(role)
                     .provider(provider)
                     .nickName(randomNickName)
+                    .providerId(providerId)
                     .build();
 
             log.info("userEmail in PrincipalOauth2UserService : " + member.getUserEmail());
@@ -149,48 +149,34 @@ public class PrincipalOauth2UserService extends DefaultOAuth2UserService {
 
         } else {
             log.info("로그인을 이미 한적이 있습니다. 당신은 자동회원가입이 되어 있습니다.");
-
             MemberEntity findUser = memberRepository.findByUserEmail(email);
-            log.info("findUser in PrincipalOauth2UserService : " + findUser);
-            TokenEntity find = tokenRepository.findByUserEmail(findUser.getUserEmail());
+            log.info("findUser1 in PrincipalOauth2UserService : " + findUser);
+            List<GrantedAuthority> authorities = getAuthoritiesForUser(findUser);
 
-            if (find != null) {
+            TokenDTO tokenForOAuth2 =
+                    jwtProvider.createTokenForOAuth2(findUser.getUserEmail(), authorities);
 
-                List<GrantedAuthority> authorities = getAuthoritiesForUser(findUser);
+            TokenEntity findToken = tokenRepository.findByUserEmail(tokenForOAuth2.getUserEmail());
+            log.info("findToken in PrincipalOauth2UserService : " + findToken);
 
-                TokenDTO tokenForOAuth2 =
-                        jwtProvider.createTokenForOAuth2(findUser.getUserEmail(), authorities);
+            findToken = TokenEntity.builder()
+                    .id(findToken.getId())
+                    .grantType(tokenForOAuth2.getGrantType())
+                    .userId(findUser.getUserId())
+                    .accessToken(tokenForOAuth2.getAccessToken())
+                    .refreshToken(tokenForOAuth2.getRefreshToken())
+                    .accessTokenTime(tokenForOAuth2.getAccessTokenTime())
+                    .refreshTokenTime(tokenForOAuth2.getRefreshTokenTime())
+                    .userEmail(tokenForOAuth2.getUserEmail())
+                    .nickName(randomNickName)
+                    .userType(role)
+                    .build();
+            tokenRepository.save(findToken);
 
-                tokenForOAuth2 = TokenDTO.builder()
-                        .id(find.getId())
-                        .grantType(tokenForOAuth2.getGrantType())
-                        .userId(findUser.getUserId())
-                        .accessToken(tokenForOAuth2.getAccessToken())
-                        .refreshToken(tokenForOAuth2.getRefreshToken())
-                        .accessTokenTime(tokenForOAuth2.getAccessTokenTime())
-                        .refreshTokenTime(tokenForOAuth2.getRefreshTokenTime())
-                        .userEmail(tokenForOAuth2.getUserEmail())
-                        .nickName(randomNickName)
-                        .userType(role)
-                        .build();
-
-                // 생성된 JWT 토큰을 엔티티로 변환하여 저장하기 위해 TokenEntity 객체로 변환합니다.
-                TokenEntity tokenEntity = TokenEntity.toTokenEntity(tokenForOAuth2);
-                tokenRepository.save(tokenEntity);
-            }
         }
 
         TokenEntity findToken = tokenRepository.findByUserEmail(email);
         log.info("findToken : " + findToken);
-        MemberEntity findUser = memberRepository.findByProviderId(providerId);
-
-        if (findToken != null && findUser.getUserEmail().equals(findToken.getUserEmail())) {
-            if (StringUtils.hasText(findToken.getAccessToken())
-                    && jwtProvider.validateToken(findToken.getAccessToken())) {
-                Authentication authentication = jwtProvider.getAuthentication(findToken.getAccessToken());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        }
 
 
         // attributes가 있는 생성자를 사용하여 PrincipalDetails 객체 생성

@@ -274,7 +274,6 @@ public class MemberService {
         MemberEntity findEmail = memberRepository.findByUserEmail(userEmail);
         log.info("findUser in MemberService : " + findEmail);
 
-        List<GrantedAuthority> authoritiesForUser = getAuthoritiesForUser(findEmail);
         TokenEntity findToken = tokenRepository.findByUserEmail(findEmail.getUserEmail());
         log.info("findUser in MemberService : " + findToken);
 

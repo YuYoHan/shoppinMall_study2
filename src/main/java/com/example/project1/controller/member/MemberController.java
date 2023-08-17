@@ -100,22 +100,36 @@ public class MemberController {
     }
 
     // Oauth2 로그인 시 JWT 발급
-    @PostMapping("/success-oauth-login")
-    public ResponseEntity<?> createTokenForOauth2(@AuthenticationPrincipal UserDetails userDetails) {
+    @GetMapping("/success-oauth")
+    public ResponseEntity<?> createTokenForOauth2() {
         try {
-            log.info("userDetails : " + userDetails);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            log.info("authentication : " + authentication);
 
-            String userEmail = userDetails.getUsername();
+            if(authentication != null && authentication.isAuthenticated()) {
+                Object  principal = authentication.getPrincipal();
+                log.info("principal : " + principal);
+                if(principal instanceof PrincipalDetails) {
+                    PrincipalDetails principalDetails = (PrincipalDetails) principal;
+                    log.info("principalDetails : " + principalDetails);
+                    String userEmail = principalDetails.getUsername();
+                    log.info(" userEmail : " + userEmail);
 
-            log.info(" userEmail : " + userEmail);
-
-            if(userEmail != null) {
-                ResponseEntity<?> jwt = memberService.createToken(userEmail);
-                return ResponseEntity.ok().body(jwt);
+                    if(userEmail != null) {
+                        ResponseEntity<?> jwt = memberService.createToken(userEmail);
+                        return ResponseEntity.ok().body(jwt);
+                    } else {
+                        // 토큰이 없을 경우에 대한 처리
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+                    }
+                } else {
+                    // PrincipalDetails로 캐스팅할 수 없는 경우에 대한 처리
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                }
             } else {
-                return null;
+                // 인증되지 않은 경우에 대한 처리
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
@@ -133,6 +147,9 @@ public class MemberController {
     }
 
     // 회원정보 수정
+    // @AuthenticationPrincipal UserDetails userDetails는 현재 로그인한 사용자의 정보를 제공하므로,
+    // 만약에 로그인이 되지 않은 상태는 null 이 나온다.
+    // 로그인 여부는 헤더에 토큰이 담겨져오냐 아니냐로 판단한다.
     @PutMapping("/api/v1/users/")
     public ResponseEntity<?> update(@RequestBody MemberDTO memberDTO,
                                     @AuthenticationPrincipal UserDetails userDetails) throws Exception{
