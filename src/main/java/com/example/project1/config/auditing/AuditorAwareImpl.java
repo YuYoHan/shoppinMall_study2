@@ -10,6 +10,8 @@ public class AuditorAwareImpl implements AuditorAware<String> {
 
     @Override
     public Optional<String> getCurrentAuditor() {
+        // 인증받은 유저가 SecurityContextHolder에 등록이 되는데
+        // 그곳에서 가져오는 것이다.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         String userEmail = "";
