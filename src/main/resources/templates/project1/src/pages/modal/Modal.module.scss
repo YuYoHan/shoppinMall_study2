@@ -1,0 +1,29 @@
+/* modal.module.scss */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modalContent {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+  max-height: 80vh; /* 최대 높이를 설정하여 화면에서 벗어나지 않도록 함 */
+  overflow-y: auto; /* 내용이 넘칠 경우 스크롤 가능하게 함 */
+  position: relative; /* 닫기 버튼을 모달 콘텐츠 내에서 절대 위치로 배치 */
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+}
