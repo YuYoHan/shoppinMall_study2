@@ -1,28 +1,17 @@
-# project_study1
-프로젝트 연습 
+# 스프링부트로 직접 만들면서 배우는 대규모 시스템 설계 - 게시판
+[인프런](https://inf.run/HMCRn) <br/>
+![image](https://github.com/user-attachments/assets/38869ee8-bfc9-4aae-8c32-7cf75d69eca6)
 
-사용 기술 :
-- Spring Boot <br/>
-- Spring Security <br/>
-- Spring Oauth2 <br/>
-- Spring Batch <br/>
-- JWT <br/>
-- JPA <br/>
-- JPQL <br/>
-- Querydsl <br/>
-- MySQL <br/>
-- Swagger <br/>
-
-## 목적
-프로젝트 연습입니다. REST 방식으로 진행하며 일반 로그인을 했을 때 JWT 반환과 소셜 로그인을 했을 떄 서버에서 JWT를 반환해서 프론트에서 access token을 header에 넣어서 보내주면서 요청을 보내는 형태로 로직을 구성했습니다. 
-<br />
-JWT를 반환할 때 DTO에 담아서 보내주는데 DTO에 포함된 정보 :
-- grantType <br />
-- accessToken <br />
-- refreshToken <br />
-- userId <br />
-- nickName <br />
-- userEmail <br />
-- accesstokenTime <br />
-- refreshTokenTime <br />
-
+## 기술 스택 및 도구
+- Spring Boot 3.3.2
+- Java 21
+- JPA
+- Gradle
+- MySQL 8.0.38
+- Redis 7.4
+- Kafka 3.8.0
+- IntelliJ IDEA <br/>
+<br/>
+특정 버전에 구애받는 강의는 아니지만, 원활한 실습을 위해 동일한 환경을 권장합니다.
+타 언어 또는 프레임워크를 사용하더라도, 개념 및 설계 방식은 동일합니다. 이러한 부분에 대해 직접 고려하고 개발할 수 있다면, 스프링부트를 사용하지 않더라도 학습하실 수 있습니다.
+JPA에 대해 설명하진 않지만 기초 수준에서 다루기 때문에, 별도 지식은 없어도 괜찮습니다.
